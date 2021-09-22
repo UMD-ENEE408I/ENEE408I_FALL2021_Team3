@@ -17,6 +17,7 @@ const unsigned int M2_I_SENSE = A0;
 const float M_I_COUNTS_TO_A = (3.3 / 1024.0) / 0.120;
 
 const unsigned int PWM_FWD = 25;  //forward
+const unsigned int PWM_BWD = 30;  //backward
 const unsigned int PWM_R = 30;    //right turn
 const unsigned int PWM_L = 25;    //left turn
 const unsigned int BUF_THRESHOLD = 550;
@@ -186,7 +187,7 @@ void loop() {
   } else if (arr[7] == true || arr[8] == true || arr[9] == true || arr[10] == true || arr[11] == true || arr[12] == true){
     turn_left(PWM_L);
   } else
-    backward(30);
+    backward(PWM_BWD);
 
   delay(10);
 
