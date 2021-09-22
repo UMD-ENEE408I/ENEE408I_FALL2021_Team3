@@ -16,7 +16,10 @@ const unsigned int M2_I_SENSE = A0;
 
 const float M_I_COUNTS_TO_A = (3.3 / 1024.0) / 0.120;
 
-const unsigned int PWM_VALUE = 50;
+const unsigned int PWM_FWD = 15;  //forward
+const unsigned int PWM_BWD = 20;  //backward
+const unsigned int PWM_R = 35;    //right turn
+const unsigned int PWM_L = 35;    //left turn
 
 void M1_backward(unsigned int PWM) {
   analogWrite(M1_IN_1, PWM);
@@ -69,7 +72,7 @@ void turn_right(unsigned int PWM) {
 
 void backward(unsigned int PWM) {
   M1_backward(PWM);
-  M2_backward(PWM+20);
+  M2_backward(PWM+10);
 }
 
 int check_left(bool arr[]) {
@@ -151,22 +154,22 @@ void loop() {
   }
 
   if (check_left(arr) > 3) {
-      turn_right(35);
-      delay(10);
+      turn_right(PWM_R);
+      delay(7);
     } else if (check_right(arr) > 3) {
-      turn_left(35);
-      delay(10);
+      turn_left(PWM_L);
+      delay(7);
     } else if (arr[6] == true) {
-    forward(20);                    //20 too low
+    forward(PWM_FWD);                    //20 too low
     } else if (arr[5] == true || arr[4] == true || arr[3] == true || 
     arr[2] == true || arr[1] == true || arr[0] == true) {
-      turn_right(30);
+      turn_right(PWM_R);
     } else if (arr[7] == true || arr[8] == true || arr[9] == true ||
     arr[10] == true || arr[11] == true || arr[12] == true) {
-      turn_left(25);
+      turn_left(PWM_L);
     } else {
-      //backward(30);
-      stop_move();
+      backward(30);
+      //stop_move();
     }
 
 
