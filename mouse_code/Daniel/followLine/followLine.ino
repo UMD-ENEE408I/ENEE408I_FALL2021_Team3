@@ -16,7 +16,7 @@ const unsigned int M2_I_SENSE = A0;
 
 const float M_I_COUNTS_TO_A = (3.3 / 1024.0) / 0.120;
 
-const unsigned int PWM_VALUE = 50;
+const unsigned int PWM_VALUE = 60;
 
 void M1_backward(unsigned int PWM) {
   analogWrite(M1_IN_1, PWM - 5);
@@ -170,7 +170,7 @@ void loop() {
     turn_right(40);
     delay(10);
   } else if (arr[6] == true) {
-  forward(30);
+  forward(40);
   } else if (arr[5] == true || arr[4] == true || arr[3] == true || 
   arr[2] == true || arr[1] == true || arr[0] == true) {
     turn_right(30);
