@@ -143,3 +143,5 @@ for point in intersects:
         cv2.circle(img,(x,y),radius=1,color=(0,0,255),thickness=2)
 
 cv2.imwrite('cross_path_c_line.jpg',img)
+im = Image.open('cross_path_c_line.jpg')
+im.show()
