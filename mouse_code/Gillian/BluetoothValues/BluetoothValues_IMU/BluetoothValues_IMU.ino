@@ -1,14 +1,16 @@
 #include <ArduinoBLE.h>
 #include <Arduino_LSM9DS1.h>
 
-float gx, gy, gz;
+float gx, gy, gz;  //global vars for gyroscope values
 
 BLEService motorService("0fe79935-cd39-480a-8a44-06b70f36f248");
-BLEService sendIMUService("1eb0db8f-1c34-4168-8daf-0cd5d8d07fe6");  //send IMU data to serial
+BLEService IMUGyroService("1eb0db8f-1c34-4168-8daf-0cd5d8d07fe6");  //send IMU data to serial
 
 // create switch characteristic and allow remote device to read and write
 BLEUnsignedIntCharacteristic motorCharacteristic("0fe79935-cd39-480a-8a44-06b70f36f249", BLERead | BLEWrite);
-BLEUnsignedIntCharacteristic IMUCharacteristic("1eb0db8f-1c34-4168-8daf-0cd5d8d07fe6", BLERead);
+BLEFloatCharacteristic IMUGyroXCharacteristic("1eb0db8f-1c34-4168-8daf-0cd5d8d07fe7", BLERead);
+BLEFloatCharacteristic IMUGyroYCharacteristic("985beab5-3fd8-4019-a2a1-a1d5c9ca2159", BLERead);
+//BLEFloatCharacteristic IMUGyroZCharacteristic();
 
 void setup() {
   Serial.begin(115200);
@@ -27,9 +29,10 @@ void setup() {
   motorService.addCharacteristic(motorCharacteristic);
   BLE.addService(motorService);
 
-  BLE.setAdvertisedService(sendIMUService);
-  sendIMUService.addCharacteristic(IMUCharacteristic);
-  BLE.addService(sendIMUService);
+  BLE.setAdvertisedService(IMUGyroService);
+  IMUGyroService.addCharacteristic(IMUGyroXCharacteristic);
+  IMUGyroService.addCharacteristic(IMUGyroYCharacteristic);
+  BLE.addService(IMUGyroService);
 
   BLE.setEventHandler(BLEConnected, blePeripheralConnectHandler);
   BLE.setEventHandler(BLEDisconnected, blePeripheralDisconnectHandler);
@@ -37,10 +40,17 @@ void setup() {
   // assign event handlers for characteristic
   //motorCharacteristic.setEventHandler(BLEWritten, motorCharacteristicWritten);
   //motorCharacteristic.setValue(1);
-  
-  IMUCharacteristic.setEventHandler(BLEWritten, IMUCharacteristicWritten);
-  IMUCharacteristic.setValue(0);
 
+  //event handler for IMU Gyro x characteristic
+  IMUGyroXCharacteristic.setEventHandler(BLEWritten, IMUCharacteristicWritten);
+  //set initial value
+  IMUGyroXCharacteristic.setValue(0);
+  //event handler for IMU Gyro y characteristic
+  IMUGyroYCharacteristic.setEventHandler(BLEWritten, IMUCharacteristicWritten);
+  //set initial value
+  IMUGyroYCharacteristic.setValue(0);
+
+  //start advertising
   BLE.advertise();
   Serial.println("Waiting for connection");
 
@@ -53,6 +63,17 @@ void setup() {
 void loop() {
   BLE.poll();
   getIMUGyro();
+  Serial.print("Gyr: ");
+  Serial.print(gx);
+  Serial.print('\t');
+  Serial.print(gy);
+  Serial.print('\t');
+  Serial.print(gz);
+  Serial.print('\t');
+  Serial.println();
+  IMUGyroXCharacteristic.writeValue(gx);
+  IMUGyroYCharacteristic.writeValue(gy);
+  delay(100);
 }
 
 void blePeripheralConnectHandler(BLEDevice central) {
@@ -75,14 +96,17 @@ void motorCharacteristicWritten(BLEDevice central, BLECharacteristic characteris
   Serial.println(right);
 }
 
-//write gyroscope values
+//print values written from server
 void IMUCharacteristicWritten(BLEDevice central, BLECharacteristic characteristic){
   Serial.print("IMUCharacteristicWritten: ");
-  unsigned int v = IMUCharacteristic.value();
-  
+  unsigned int v = IMUGyroXCharacteristic.value();
+  Serial.print("value: ");
+  Serial.println(v);
 }
 
 //get gyroscope values
 void getIMUGyro(){
-  
+  if(IMU.gyroscopeAvailable()){
+    IMU.readGyroscope(gx, gy, gz);
+  }
 }
