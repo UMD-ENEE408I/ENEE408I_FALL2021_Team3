@@ -7,12 +7,12 @@ from PIL import Image
 
 # Regular Houghlines with center line detection
 
-img = cv2.imread('camera6.jpg')
-img = img[int(len(img)/2):len(img), :]
+img = cv2.imread('33mm_calib.jpg')
+img = img[int(len(img)/2):len(img), 10:len(img[0])-10]
 gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
 edges = cv2.Canny(gray,200,255)
 cv2.imwrite('edges.jpg',edges)
-lines = cv2.HoughLines(edges,1,np.pi/180,120)
+lines = cv2.HoughLines(edges,1,np.pi/180,50)
 print("All lines: ")
 print(lines)
 
@@ -38,22 +38,24 @@ minSlope = 0
 
 n = 0       # n = number of horizontal lines
 
-# Find most pos and most neg slopes
+# Find most vertical lines (most positive and most negative)
 # Find slope closest to zero
 #print("slopes: ")
 for line in lines:
     for rho,theta in line:
-        slope =  -1/math.tan(theta)
-        print(slope, "\trho = ", rho, ", theta = ", theta)
+        print("rho = ", rho, ", theta = ", theta)
+        if theta != 0:
+            slope =  -1/math.tan(theta)
+            print("\tslope = ", slope)
 
-        if slope>maxSlope:
-            maxSlope = slope
-            maxSlope_ind = i
-        elif slope<minSlope:
-            minSlope = slope
-            minSlope_ind = i
-        if abs(slope) < 0.1:
-            n += 1
+            if slope>maxSlope:
+                maxSlope = slope
+                maxSlope_ind = i
+            elif slope<minSlope:
+                minSlope = slope
+                minSlope_ind = i
+            if abs(slope) < 0.1:
+                n += 1
         i += 1
 
 intLines = 0    # =0 if no intersecting lines
@@ -66,11 +68,12 @@ if n > 1:       # there are at least 2 potential intersection lines
     i = 0
     for line in lines:
         for rho,theta in line:
-            slope =  -1/math.tan(theta)
+            if theta != 0:
+                slope =  -1/math.tan(theta)
 
-            if abs(slope)<abs(zeroSlope):
-                zeroSlope = slope
-                zeroSlope_ind = i
+                if abs(slope)<abs(zeroSlope):
+                    zeroSlope = slope
+                    zeroSlope_ind = i
             i += 1
 
     zeroSlope2 = 1
@@ -79,14 +82,15 @@ if n > 1:       # there are at least 2 potential intersection lines
     for line in lines:
         for rho,theta in line:
             if i != zeroSlope_ind:
-                slope =  -1/math.tan(theta)
-                print("zeroSlope2 = ", zeroSlope2, "\tslope = ", slope)
-                print("\trho = ", rho, "\tzeroSlope rho = ", lines[zeroSlope_ind][0][0])
-                if abs(slope)<abs(zeroSlope2) and abs(rho-lines[zeroSlope_ind][0][0])>3:
-                    print("\tintLines=1")
-                    zeroSlope2 = slope
-                    zeroSlope2_ind = i
-                    intLines = 1    # =1 if intersecting lines present
+                if theta != 0:
+                    slope =  -1/math.tan(theta)
+                    print("zeroSlope2 = ", zeroSlope2, "\tslope = ", slope)
+                    print("\trho = ", rho, "\tzeroSlope rho = ", lines[zeroSlope_ind][0][0])
+                    if abs(slope)<abs(zeroSlope2) and abs(rho-lines[zeroSlope_ind][0][0])>3:
+                        print("\tintLines=1")
+                        zeroSlope2 = slope
+                        zeroSlope2_ind = i
+                        intLines = 1    # =1 if intersecting lines present
             i += 1
 
     print("zeroSlope: ", zeroSlope, " @ i=", zeroSlope_ind, ", zeroSlope2: ", zeroSlope2, " @ i=", zeroSlope2_ind)
