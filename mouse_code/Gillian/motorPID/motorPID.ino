@@ -25,7 +25,7 @@ int M1_PWM = 25;
 int prevTime = 0;
 int prevReadM1 = 0;
 int prevReadM2 = 0;
-int targetVel = 0.3; //vel in m/s
+float targetVel = 0.5; //vel in m/s
 //float prevVelM1 = 0;
 //float prevVelM2 = 0;
 float errorM1 = 0;
@@ -56,8 +56,10 @@ void setup() {
   pinMode(M1_IN2, OUTPUT);
   pinMode(M2_IN1, OUTPUT);
   pinMode(M2_IN2, OUTPUT);
-  M1_forward(35); //M1 forward at PWM = 25 
+  M1_forward(35); //M1 forward at PWM = 35 
   delay(5000);
+  prevReadM1 = enc1.read();
+  prevTime = micros();
   //M1_stop();
 }
 
@@ -72,9 +74,20 @@ void loop() {
   
   long curTime = micros(); //time since Arduino started in microseconds
   int curReadM1 = enc1.read();
+  /*Serial.print("prevReadM1: ");
+  Serial.print(prevReadM1);
+  Serial.print("   curReadM1: ");
+  Serial.print(curReadM1);
+  Serial.println();*/
   int curReadM2 = enc2.read();
   float deltaTime = ((float) (curTime - prevTime))/1.0e6; //delta T in seconds
+  /*Serial.print("deltaT: ");
+  Serial.print(deltaTime);
+  Serial.println();*/
   float curRotM1 = (curReadM1 - prevReadM1)/deltaTime;  //encoder counts/second
+  /*Serial.print("curRotM1: ");
+  Serial.print(curRotM1);
+  Serial.println();*/
   float curRotM2 = (curReadM2 - prevReadM2)/deltaTime;  //encoder counts/second
 
   //update stored values
@@ -84,6 +97,10 @@ void loop() {
 
   //convert current measured velocity in counts/sec to vel in m/s
   float curVelM1 = curRotM1/360*0.032*M_PI;   //current measured velocity on M1
+  Serial.println();
+  Serial.print("curVel:");
+  Serial.print(curVelM1);
+  Serial.print(" ");
   float curVelM2 = curRotM2/360*0.032*M_PI;   //current measured velocity on M2
 
   /*
@@ -92,16 +109,26 @@ void loop() {
   */
 
   //PID coeffs
-  float Kp = 10;
-  float Ki = 0;
+  float Kp = 4;
+  float Ki = 0.1;
   float Kd = 0;
 
   //error signal e(t)
   errorM1 = targetVel - curVelM1;
+  /*Serial.print("errorM1:");
+  Serial.print(errorM1);
+  Serial.print(" ");*/
   //integral signal (add error under the curve)
   integralM1 = integralM1 + errorM1*deltaTime;
+  /*Serial.print("integralM1:");
+  Serial.print(integralM1);
+  Serial.print(" ");*/
   //derivative signal
   derivM1 = (errorM1 - prevErrorM1)/deltaTime;
+  /*
+  Serial.print("derivM1:");
+  Serial.print(derivM1);
+  Serial.print(" ");*/
 
   //corrected signal u(t)
   float uM1 = Kp*errorM1 + Ki*integralM1 + Kd*derivM1;
@@ -118,10 +145,13 @@ void loop() {
 
   M1_forward(M1_PWM);
 
+  Serial.print("targetVel:");
   Serial.print(targetVel);
-  Serial.print("   ");
-  Serial.print(uM1);
+  /*Serial.print("   ");
+  Serial.print("uM1:");
+  Serial.print(uM1);*/
+  Serial.println(); 
   Serial.println();
 
-  delay(5000);
+  delay(10);
 }
