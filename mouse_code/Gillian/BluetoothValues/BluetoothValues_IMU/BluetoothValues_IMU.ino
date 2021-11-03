@@ -10,6 +10,7 @@ BLEService IMUGyroService("1eb0db8f-1c34-4168-8daf-0cd5d8d07fe6");  //send IMU d
 BLEUnsignedIntCharacteristic motorCharacteristic("0fe79935-cd39-480a-8a44-06b70f36f249", BLERead | BLEWrite);
 BLEFloatCharacteristic IMUGyroXCharacteristic("1eb0db8f-1c34-4168-8daf-0cd5d8d07fe7", BLERead);
 BLEFloatCharacteristic IMUGyroYCharacteristic("985beab5-3fd8-4019-a2a1-a1d5c9ca2159", BLERead);
+BLEFloatCharacteristic IMUGyroZCharacteristic("7deb788e-595c-4c67-9fae-102d9b401811", BLERead);
 //BLEFloatCharacteristic IMUGyroZCharacteristic();
 
 void setup() {
@@ -32,6 +33,7 @@ void setup() {
   BLE.setAdvertisedService(IMUGyroService);
   IMUGyroService.addCharacteristic(IMUGyroXCharacteristic);
   IMUGyroService.addCharacteristic(IMUGyroYCharacteristic);
+  IMUGyroService.addCharacteristic(IMUGyroZCharacteristic);
   BLE.addService(IMUGyroService);
 
   BLE.setEventHandler(BLEConnected, blePeripheralConnectHandler);
@@ -49,6 +51,10 @@ void setup() {
   IMUGyroYCharacteristic.setEventHandler(BLEWritten, IMUCharacteristicWritten);
   //set initial value
   IMUGyroYCharacteristic.setValue(0);
+  //event handler for IMU Gyro y characteristic
+  IMUGyroZCharacteristic.setEventHandler(BLEWritten, IMUCharacteristicWritten);
+  //set initial value
+  IMUGyroZCharacteristic.setValue(0);
 
   //start advertising
   BLE.advertise();
@@ -73,6 +79,7 @@ void loop() {
   Serial.println();
   IMUGyroXCharacteristic.writeValue(gx);
   IMUGyroYCharacteristic.writeValue(gy);
+  IMUGyroZCharacteristic.writeValue(gz);
   delay(100);
 }
 
