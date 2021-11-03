@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import math
-  
+
 vid = cv2.VideoCapture(1)
 
 ret = np.load("../../Caitlin/OpenCV/Calibration/camera_params/ret.npy")
@@ -9,15 +9,15 @@ mtx = np.load("../../Caitlin/OpenCV/Calibration/camera_params/mtx.npy")
 dist = np.load("../../Caitlin/OpenCV/Calibration/camera_params/dist.npy")
 rvecs = np.load("../../Caitlin/OpenCV/Calibration/camera_params/rvecs.npy")
 tvecs = np.load("../../Caitlin/OpenCV/Calibration/camera_params/tvecs.npy")
-newmtx = np.load("../../Caitlin/OpenCV/Calibration/camera_params/newmtx.npy")  
+newmtx = np.load("../../Caitlin/OpenCV/Calibration/camera_params/newmtx.npy")
 
 while(vid.isOpened()):
-      
+
     ret, img = vid.read()
 
     img = cv2.undistort(img, mtx, dist, None, newmtx)
 
-    img = img[int(len(img)/2):len(img)-30, 10:len(img[0])-10]
+    img = img[int(len(img)/2):len(img), 10:len(img[0])-10]
 
 
     gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
@@ -57,6 +57,7 @@ while(vid.isOpened()):
         for line in lines:
             for rho,theta in line:
                 print("rho = ", rho, ", theta = ", theta)
+
                 if theta != 0:
                     slope =  -1/math.tan(theta)
                     print("\tslope = ", slope)
@@ -84,9 +85,16 @@ while(vid.isOpened()):
                     if theta != 0:
                         slope =  -1/math.tan(theta)
 
+                        # find x and y from rho and theta
+                        x0 = rho * math.cos(theta)
+                        y0 = rho * math.sin(theta)
+
+                        print("x0 = ", x0, ", y0 = ", y0)
+
                         if abs(slope)<abs(zeroSlope):
-                            zeroSlope = slope
-                            zeroSlope_ind = i
+                            if y0 < len(img) - 35:
+                                zeroSlope = slope
+                                zeroSlope_ind = i
                     i += 1
 
             zeroSlope2 = 1
@@ -99,11 +107,19 @@ while(vid.isOpened()):
                             slope =  -1/math.tan(theta)
                             print("zeroSlope2 = ", zeroSlope2, "\tslope = ", slope)
                             print("\trho = ", rho, "\tzeroSlope rho = ", lines[zeroSlope_ind][0][0])
+
+                            # find x and y from rho and theta
+                            x0 = rho * math.cos(theta)
+                            y0 = rho * math.sin(theta)
+
+                            print("x0 = ", x0, ", y0 = ", y0)
+
                             if abs(slope)<abs(zeroSlope2) and abs(rho-lines[zeroSlope_ind][0][0])>3:
                                 print("\tintLines=1")
-                                zeroSlope2 = slope
-                                zeroSlope2_ind = i
-                                intLines = 1    # =1 if intersecting lines present
+                                if y0 < len(img) - 35:
+                                    zeroSlope2 = slope
+                                    zeroSlope2_ind = i
+                                    intLines = 1    # =1 if intersecting lines present
                     i += 1
 
             print("zeroSlope: ", zeroSlope, " @ i=", zeroSlope_ind, ", zeroSlope2: ", zeroSlope2, " @ i=", zeroSlope2_ind)
@@ -198,11 +214,11 @@ while(vid.isOpened()):
                     k+=1
 
     cv2.imshow('img', img)
-    cv2.waitKey(20)
+    cv2.waitKey(1)
 
-        
 
-    
+
+
 
 vid.release()
 cv2.destroyAllWindows()
