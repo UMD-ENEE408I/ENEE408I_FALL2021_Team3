@@ -1,5 +1,4 @@
 //Uses motor encoder to determine current velocity
-
 #include <Encoder.h>
 //#include <SimplyAtomic.h>
 #include <Adafruit_MCP3008.h>
@@ -23,8 +22,10 @@ const unsigned int M2_ENCA = 8;
 const unsigned int M2_ENCB = 9;
 
 int M1_PWM = 0;
+int M2_PWM = 0;
 
-int prevTime = 0;
+int prevTimeM1 = 0;
+int prevTimeM2 = 0;
 int prevReadM1 = 0;
 int prevReadM2 = 0;
 float curVelM1, curVelM2;
@@ -35,6 +36,10 @@ float errorM1 = 0;
 float integralM1 = 0;
 float derivM1 = 0;
 float prevErrorM1 = 0;
+float errorM2 = 0;
+float integralM2 = 0;
+float derivM2 = 0;
+float prevErrorM2 = 0;
 
 Encoder enc1(M1_ENCA, M1_ENCB);
 Encoder enc2(M2_ENCA, M2_ENCB);
@@ -47,6 +52,16 @@ void M1_forward(unsigned int PWM) {
 void M1_stop() {
   analogWrite(M1_IN1, 0);
   analogWrite(M1_IN2, 0);
+}
+
+void M2_forward(unsigned int PWM) {
+  analogWrite(M2_IN_1, 0);
+  analogWrite(M2_IN_2, PWM);
+}
+
+void M2_stop() {
+  analogWrite(M2_IN_1, 0);
+  analogWrite(M2_IN_2, 0);
 }
 
 void setup() {
@@ -62,19 +77,12 @@ void setup() {
   //M1_forward(35); //M1 forward at PWM = 35 
   delay(5000);
   prevReadM1 = enc1.read();
+  prevReadM2 = enc2.read();
   prevTime = micros();
-  //M1_stop();
 }
 
 void loop() {
-  /*
-  //TODO: Add atomic block to update "prev" variables to be past "cur" variables
-  ATOMIC(){
-    prevReadM1 = curReadM1;
-    prevReadM2 = curReadM2;
-  }
-*/
-  
+  // put your main code here, to run repeatedly:
   long curTime = micros(); //time since Arduino started in microseconds
   int curReadM1 = enc1.read();
   /*Serial.print("prevReadM1: ");
@@ -112,9 +120,9 @@ void loop() {
   */
 
   //PID coeffs
-  float Kp = 4;
-  float Ki = 0.1;
-  float Kd = 0;
+  float KpM1 = 4;
+  float KiM1 = 0.1;
+  float KdM1 = 0;
 
   //error signal e(t)
   errorM1 = targetVel - curVelM1;
@@ -133,20 +141,30 @@ void loop() {
   Serial.print(derivM1);
   Serial.print(" ");*/
 
-  //corrected signal u(t)
-  float uM1 = Kp*errorM1 + Ki*integralM1 + Kd*derivM1;
+  //corrected signals u(t)
+  float uM1 = KpM1*errorM1 + KiM1*integralM1 + KdM1*derivM1;
+  float uM2 = KpM2*errorM2 + KiM2*integralM2 + KdM1*derivM2;
 
   //update stored error value
   prevErrorM1 = errorM1;
+  prevErrorM2 = errorM2;
 
-  //adjust PWM
+  //adjust PWM on M1
   M1_PWM = M1_PWM + uM1;
   if (M1_PWM > 255)
     M1_PWM = 255;
   else if (M1_PWM < 0)
     M1_PWM = 0;
 
+  //adjust PWM on M2
+  M2_PWM = M2_PWM + uM2;
+  if (M2_PWM > 255)
+    M2_PWM = 255;
+  else if (M2_PWM < 0)
+    M2_PWM = 0
+
   M1_forward(M1_PWM);
+  M2_forward(M2_PWM);
 
   Serial.print("targetVel:");
   Serial.print(targetVel);
@@ -157,4 +175,12 @@ void loop() {
   //Serial.println();
 
   delay(10);
+}
+
+void pidM1(){
+  
+}
+
+void pidM2(){
+  
 }
