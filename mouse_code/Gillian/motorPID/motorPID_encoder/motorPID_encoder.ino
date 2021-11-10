@@ -1,3 +1,5 @@
+//Uses motor encoder to determine current velocity
+
 #include <Encoder.h>
 #include <SimplyAtomic.h>
 #include <Adafruit_MCP3008.h>
