@@ -7,8 +7,8 @@ from PIL import Image
 
 # Regular Houghlines with center line detection
 
-img = cv2.imread('33mm_calib.jpg')                          # read image
-img = img[int(len(img)/2):len(img), 10:len(img[0])-10]      # crop image
+img = cv2.imread('59mm3_T_calib.jpg')                          # read image
+img = img[int(len(img)*0.6):len(img)-40, 10:len(img[0])-10]      # crop image
 gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)                 # convert to grayscale
 edges = cv2.Canny(gray,200,255)                             # edge detection with Canny
 cv2.imwrite('edges.jpg',edges)                              # write edges to image
@@ -27,7 +27,9 @@ for line in lines:
         y1 = int(y0 + 1000*(a))
         x2 = int(x0 - 1000*(-b))
         y2 = int(y0 - 1000*(a))
-        #cv2.line(img,(x1,y1),(x2,y2),(0,0,255),2)
+        cv2.line(img,(x1,y1),(x2,y2),(0,0,255),2)
+
+cv2.imwrite('allLines.jpg',edges)
 
 # Begin selecting path edges
 i = 0
@@ -86,7 +88,7 @@ if n > 1:       # There are at least 2 potential intersection lines
                     slope =  -1/math.tan(theta)
                     print("zeroSlope2 = ", zeroSlope2, "\tslope = ", slope)
                     print("\trho = ", rho, "\tzeroSlope rho = ", lines[zeroSlope_ind][0][0])
-                    if abs(slope)<abs(zeroSlope2) and abs(rho-lines[zeroSlope_ind][0][0])>3:
+                    if abs(slope)<abs(zeroSlope2) and abs(rho-lines[zeroSlope_ind][0][0])>5:
                         print("\tintLines=1")
                         zeroSlope2 = slope
                         zeroSlope2_ind = i
@@ -138,7 +140,7 @@ for line in kept_lines:
         y4 = 1000
         x4 = (y4 - y2)/slopes[i] + x2
         der_coords.append([x3, y3, x4, y4])
-        cv2.line(img,(x1,y1),(x2,y2),(0,255,255*i),2)
+        cv2.line(img,(x1,y1),(x2,y2),(50,50,50*i),2)
         i = i+1
 
 print("der_coords: ")
@@ -156,6 +158,7 @@ cv2.line(img,(c_line_x1,c_line_y1),(c_line_x2,c_line_y2),(255,0,0),2)
 
 # Find intersection points if intersecting path is present
 if intLines == 1:       # There are intersections
+
     def intersection(l1, l2):
         rho1, theta1 = l1[0]
         rho2, theta2 = l2[0]
@@ -168,24 +171,77 @@ if intLines == 1:       # There are intersections
         x0, y0 = int(np.round(x0)), int(np.round(y0))
         return [[x0, y0]]
 
-    intersects = []
+    # Calculate 4 corners of intersection
+    corners = []
     i = 0
     while i<2:
         j = 2
         while j<4:
-            intersects.append(intersection(kept_lines[i], kept_lines[j]))
+            corners.append(intersection(kept_lines[i], kept_lines[j]))
             j = j+1
         i = i+1
 
-    print(intersects)
 
+    # print and display corner points
+    print(corners)
     k = 0
-    for point in intersects:
+    for point in corners:
         for x,y in point:
             cv2.circle(img,(x,y),radius=1,color=(0,0,255),thickness=2)
             d = 120*pow(2.5,-0.02*y)+20
             print("distance to intersect ", k, ": ", d, " mm")
             k+=1
+
+    # Calculate midline of intersecting path
+    int_d1 = 120*pow(2.5,-0.02*corners[0][0][1])+20
+    int_d2 = 120*pow(2.5,-0.02*corners[1][0][1])+20
+    print("int dist 1: ", int_d1, "\tint dist 2: ", int_d2)
+
+    int_dmid = 0        # distance in mm to midline
+    if int_d1 < int_d2:
+        int_dmid = int_d1 + (int_d2 - int_d1)/2
+    else :
+        int_dmid = int_d2 + (int_d1 - int_d2)/2
+
+    int_ymid = int(-50*math.log((int_dmid - 20)/120, 2.5))      # y pixel coordinate for midline
+    print("int dist midpoint: ", int_dmid, "\tint y midpoint: ", int_ymid)
+    cv2.line(img,(0,int_ymid),(1000,int_ymid),(0,255,0),2)
+
+    # Calculate center point of intersection
+    int_center_x = int(int_ymid/1000*(c_line_x2 - c_line_x1) + c_line_x1)
+    cv2.circle(img,(int_center_x,int_ymid),radius=1,color=(0,0,255),thickness=2)
+
+    left = 0
+    right = 0
+    up = 0
+    down = 0
+
+    # Check left of center
+    int_center_left = int_center_x - 100
+    if gray[int_ymid][int_center_left] > 200 :
+        left = 1
+
+    # Check right of center
+    int_center_right = int_center_x + 100
+    if gray[int_ymid][int_center_right] > 200 :
+        right = 1
+
+    # Check above center
+    int_center_up = int_ymid - 40
+    cv2.circle(img,(int_center_x,int_center_up),radius=1,color=(0,0,255),thickness=2)
+    if gray[int_center_up][int_center_x] > 200 :
+        up = 1
+
+    # Check below center
+    int_center_down = int_ymid + 100
+    if gray[int_center_down][int_center_x] > 200 :
+        down = 1
+
+    print("left, right, up, down: ", left, ", ", right, ", ", up, ", ", down)
+
+    print("pixel left of center: ", gray[int_ymid][int_center_left])
+    print("pixel up and left of center: ", gray[int_ymid-100][int_center_left])
+
 
 cv2.imwrite('c_line_intersects.jpg',img)
 im = Image.open('c_line_intersects.jpg')
