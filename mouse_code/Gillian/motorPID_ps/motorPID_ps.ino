@@ -1,4 +1,4 @@
-//Uses motor encoder to determine current velocity
+//Uses motor encoder to determine current velocity + positional set points
 #include <Encoder.h>
 //#include <SimplyAtomic.h>
 #include <Adafruit_MCP3008.h>
@@ -125,7 +125,7 @@ void loop() {
   float KiM1 = 0.2;
   float KdM1 = 0;
   
-  float KpM2 = 4;
+  float KpM2 = 3.5;
   float KiM2 = 0.2;
   float KdM2 = 0;
 

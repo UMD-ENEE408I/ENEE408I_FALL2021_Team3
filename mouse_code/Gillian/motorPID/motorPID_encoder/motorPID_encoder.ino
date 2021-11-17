@@ -75,9 +75,10 @@ void setup() {
   pinMode(M2_IN1, OUTPUT);
   pinMode(M2_IN2, OUTPUT);
   //M1_forward(35); //M1 forward at PWM = 35 
+  //M2_forward(35);
   delay(5000);
   prevReadM1 = enc1.read();
-  prevReadM2 = enc2.read();
+  prevReadM2 = -1*enc2.read(); //enc2 reads negative values for forward
   prevTime = micros();
   //M1_stop();
 }
@@ -90,7 +91,7 @@ void loop() {
   Serial.print("   curReadM1: ");
   Serial.print(curReadM1);
   Serial.println();*/
-  int curReadM2 = enc2.read();
+  int curReadM2 = -1*enc2.read(); //enc2 reads negative values for forward
   float deltaTime = ((float) (curTime - prevTime))/1.0e6; //delta T in seconds
   /*Serial.print("deltaT: ");
   Serial.print(deltaTime);
@@ -125,8 +126,8 @@ void loop() {
   float Ki = 0.1;
   float Kd = 0; */
   //M2 PID coeffs
-  float Kp = 3.1;
-  float Ki = 0;
+  float Kp = 3.8;
+  float Ki = 0.8;
   float Kd = 0;
 
   /*
