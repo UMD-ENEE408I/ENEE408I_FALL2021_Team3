@@ -1,4 +1,4 @@
-from flask import Flask, request, Response
+from flask import Flask, request, Response, render_template
 from itertools import count
 
 # EB looks for an 'application' callable by default.
@@ -10,8 +10,12 @@ counter = count(0)
 currentNode = {1: None, 2: None, 3: None}
 nodeDict = {}
 
+startCoords = (0,0)
+
+startDict = {1: False, 2: False, 3: False}
+
 class Node:
-    def __init__(self, x, y):
+    def __init__(self, x, y, type):
         self.north = None
         self.east = None
         self.south = None
@@ -19,6 +23,8 @@ class Node:
         self.x = x
         self.y = y
         self.name = next(counter)
+        self.type = type # [N E S W] 0 for walls ex: [0 0 1 1] for a left turn
+        self.verified = False
 
 def createNode(x,y):
     if (x,y) in nodeDict.keys():
@@ -30,21 +36,22 @@ def createNode(x,y):
 
 
 @application.route('/')
-def printData():
+def home():
 
-    return internalData
+    return {}
 
-@application.route('/start/<robot_id>', methods = ['POST'])
+
+@application.route('/start/<robot_id>', methods = ['GET'])
 def start(robot_id):
     # get start coords (maze coords not cm)
     # ex: {'x': 0, 'y':0}
-    data = request.form
-
+    if startDict[robot_id]:
+        return {response: "False"}
     node = createNode(data['x'], data['y'])
 
     currentNode[robot_id] = node
 
-    return Response("", status=202, mimetype='application/json')
+    return {response: "True"}
 
 
 @application.route("/coords/<robot_id>", methods = ['POST'])
@@ -58,7 +65,7 @@ def saveCoords(robot_id):
 
     for node in nodes:
         newNode = Node(node['x'], node['y'])
-        
+
 
     internalData[int(robot_id)].append((x,y))
 
