@@ -12,8 +12,8 @@ const unsigned int ADC_2_CS = A2;
 //interrupt pins
 const unsigned int M1_IN1 = 2;
 const unsigned int M1_IN2 = 3;
-const unsigned int M2_IN1 = 4;
-const unsigned int M2_IN2 = 5;
+const unsigned int M2_IN1 = 5;
+const unsigned int M2_IN2 = 4;
 
 //encoder pins
 const unsigned int M1_ENCA = 6;
@@ -24,8 +24,7 @@ const unsigned int M2_ENCB = 9;
 int M1_PWM = 0;
 int M2_PWM = 0;
 
-int prevTimeM1 = 0;
-int prevTimeM2 = 0;
+int prevTime = 0;
 int prevReadM1 = 0;
 int prevReadM2 = 0;
 float curVelM1, curVelM2;
@@ -55,13 +54,13 @@ void M1_stop() {
 }
 
 void M2_forward(unsigned int PWM) {
-  analogWrite(M2_IN_1, 0);
-  analogWrite(M2_IN_2, PWM);
+  analogWrite(M2_IN1, 0);
+  analogWrite(M2_IN2, PWM);
 }
 
 void M2_stop() {
-  analogWrite(M2_IN_1, 0);
-  analogWrite(M2_IN_2, 0);
+  analogWrite(M2_IN1, 0);
+  analogWrite(M2_IN2, 0);
 }
 
 void setup() {
@@ -109,7 +108,7 @@ void loop() {
   //convert current measured velocity in counts/sec to vel in m/s
   curVelM1 = curRotM1/360*0.032*M_PI;   //current measured velocity on M1
   Serial.println();
-  Serial.print("curVel:");
+  Serial.print("curVelM1:");
   Serial.print(curVelM1);
   Serial.print(" ");
   curVelM2 = curRotM2/360*0.032*M_PI;   //current measured velocity on M2
@@ -123,6 +122,10 @@ void loop() {
   float KpM1 = 4;
   float KiM1 = 0.1;
   float KdM1 = 0;
+  
+  float KpM2 = 4;
+  float KiM2 = 0.1;
+  float KdM2 = 0;
 
   //error signal e(t)
   errorM1 = targetVel - curVelM1;
@@ -140,6 +143,10 @@ void loop() {
   Serial.print("derivM1:");
   Serial.print(derivM1);
   Serial.print(" ");*/
+
+  errorM2 = targetVel - curVelM2;
+  integralM2 = integralM2 + errorM2*deltaTime;
+  derivM2 = (errorM2 - prevErrorM2)/deltaTime;
 
   //corrected signals u(t)
   float uM1 = KpM1*errorM1 + KiM1*integralM1 + KdM1*derivM1;
@@ -161,7 +168,7 @@ void loop() {
   if (M2_PWM > 255)
     M2_PWM = 255;
   else if (M2_PWM < 0)
-    M2_PWM = 0
+    M2_PWM = 0;
 
   M1_forward(M1_PWM);
   M2_forward(M2_PWM);
@@ -171,8 +178,7 @@ void loop() {
   /*Serial.print("   ");
   Serial.print("uM1:");
   Serial.print(uM1);*/
-  Serial.println(); 
-  //Serial.println();
+  Serial.println();
 
   delay(10);
 }
