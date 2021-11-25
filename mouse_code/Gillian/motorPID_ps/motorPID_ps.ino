@@ -121,12 +121,12 @@ void loop() {
   */
 
   //PID coeffs
-  float KpM1 = 4;
-  float KiM1 = 0.2;
+  float KpM1 = 5;
+  float KiM1 = 0;
   float KdM1 = 0;
   
-  float KpM2 = 3.5;
-  float KiM2 = 0.2;
+  float KpM2 = 5;
+  float KiM2 = 0;
   float KdM2 = 0;
 
   //error signal e(t)
