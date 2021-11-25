@@ -27,6 +27,7 @@ int M2_PWM = 0;
 int prevTime = 0;
 int prevReadM1 = 0;
 int prevReadM2 = 0;
+float targetDeltaRead = 0; //desired change in position in encoder counts, will be const and det. by target vel
 float curVelM1, curVelM2;
 float targetVel = 0.3; //vel in m/s
 //float prevVelM1 = 0;
@@ -84,73 +85,54 @@ void loop() {
   // put your main code here, to run repeatedly:
   long curTime = micros(); //time since Arduino started in microseconds
   int curReadM1 = enc1.read();
-  /*Serial.print("prevReadM1: ");
-  Serial.print(prevReadM1);
-  Serial.print("   curReadM1: ");
-  Serial.print(curReadM1);
-  Serial.println();*/
   int curReadM2 = -1*enc2.read();
-  float deltaTime = ((float) (curTime - prevTime))/1.0e6; //delta T in seconds
-  /*Serial.print("deltaT: ");
-  Serial.print(deltaTime);
-  Serial.println();*/
+  float deltaTime = ((float) (curTime - prevTime))/1.0e6; //delta T [s]
+  targetDeltaRead = targetVel*deltaTime/(0.032*M_PI)*360; //target change in encoder position for desired velocity [counts]
+  targetReadM1 = curReadM1 + targetDeltaRead; //target encoder position based on desired vel [counts]
+  targetReadM2 = curReadM2 + targetDeltaRead; //target encoder position based on desired vel [counts]
+
+  /*
   float curRotM1 = (curReadM1 - prevReadM1)/deltaTime;  //encoder counts/second
-  /*Serial.print("curRotM1: ");
-  Serial.print(curRotM1);
-  Serial.println();*/
   float curRotM2 = (curReadM2 - prevReadM2)/deltaTime;  //encoder counts/second
+  //convert current measured velocity in counts/sec to vel in m/s
+  curVelM1 = curRotM1/360*0.032*M_PI;   //current measured velocity on M1
+  curVelM2 = curRotM2/360*0.032*M_PI;   //current measured velocity on M2
+  */
 
   //update stored values
   prevTime = curTime;
-  prevReadM1 = curReadM1;
-  prevReadM2 = curReadM2;
-
-  //convert current measured velocity in counts/sec to vel in m/s
-  curVelM1 = curRotM1/360*0.032*M_PI;   //current measured velocity on M1
-  Serial.print("curVelM1:");
-  Serial.print(curVelM1);
-  Serial.print(" ");
-  curVelM2 = curRotM2/360*0.032*M_PI;   //current measured velocity on M2
-  Serial.print("curVelM2:");
-  Serial.print(curVelM2);
-  Serial.print(" ");
-
-  /*
-  Serial.print(curVelM1);
-  Serial.println();
-  */
+  //prevReadM1 = curReadM1;
+  //prevReadM2 = curReadM2;
 
   //PID coeffs
+<<<<<<< Updated upstream
   float KpM1 = 5;
   float KiM1 = 0;
   float KdM1 = 0;
   
   float KpM2 = 5;
+=======
+  float KpM1 = 0;
+  float KiM1 = 0;
+  float KdM1 = 0;
+  
+  float KpM2 = 0;
+>>>>>>> Stashed changes
   float KiM2 = 0;
   float KdM2 = 0;
 
   //error signal e(t)
-  errorM1 = targetVel - curVelM1;
-  /*Serial.print("errorM1:");
-  Serial.print(errorM1);
-  Serial.print(" ");*/
+  errorM1 = targetReadM1 - curReadM1;
   //integral signal (add error under the curve)
   integralM1 = integralM1 + errorM1*deltaTime;
-  /*Serial.print("integralM1:");
-  Serial.print(integralM1);
-  Serial.print(" ");*/
   //derivative signal
   derivM1 = (errorM1 - prevErrorM1)/deltaTime;
-  /*
-  Serial.print("derivM1:");
-  Serial.print(derivM1);
-  Serial.print(" ");*/
 
-  errorM2 = targetVel - curVelM2;
+  errorM2 = targetReadM2 - curReadM2;
   integralM2 = integralM2 + errorM2*deltaTime;
   derivM2 = (errorM2 - prevErrorM2)/deltaTime;
 
-  //corrected signals u(t)
+  //corrected control signals u(t)
   float uM1 = KpM1*errorM1 + KiM1*integralM1 + KdM1*derivM1;
   float uM2 = KpM2*errorM2 + KiM2*integralM2 + KdM1*derivM2;
 
@@ -175,11 +157,14 @@ void loop() {
   M1_forward(M1_PWM);
   M2_forward(M2_PWM);
 
+  Serial.print("curVelM1:");
+  Serial.print(curVelM1);
+  Serial.print(" ");
+  Serial.print("curVelM2:");
+  Serial.print(curVelM2);
+  Serial.print(" ");
   Serial.print("targetVel:");
   Serial.print(targetVel);
-  /*Serial.print("   ");
-  Serial.print("uM1:");
-  Serial.print(uM1);*/
   Serial.println();
 
   delay(10);
