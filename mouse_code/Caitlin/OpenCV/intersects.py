@@ -7,19 +7,20 @@ from PIL import Image
 
 # Regular Houghlines with center line detection
 
-img = cv2.imread('60mm3_T_calib.jpg')                          # read image
-                                                            # 59mm3_T_calib
-                                                            # 60mm3_T_calib
+og_img = cv2.imread('92mm.jpg')                          # read image
+                                                            # 59mm3_T_cal
+                                                            # 60mm3_T_cal
                                                             # 92mm
                                                             # 70mm3_end_cal
                                                             # 83mm3_left_cal
                                                             # 88mm3_T_cal
                                                             # 100mm3_right_cal
 
-img = img[int(len(img)*0.65):len(img)-40, 10:len(img[0])-10]      # crop image
+c = 0.6                                                     # crop factor
+img = og_img[int(len(og_img)*c):len(og_img)-40, 10:len(og_img[0])-10]      # crop image
 print("img dimensions: xLen = ", len(img[0]), "\tyLen = ", len(img))
-orig_img = img                                              # duplicate original image
-gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)                 # convert to grayscale
+gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)                 # convert cropped image to grayscale
+og_gray = cv2.cvtColor(og_img,cv2.COLOR_BGR2GRAY)
 edges = cv2.Canny(gray,200,255)                             # edge detection with Canny
 cv2.imwrite('edges.jpg',edges)                              # write edges to image
 lines = cv2.HoughLines(edges,1,np.pi/180,20)                # detect lines
@@ -122,10 +123,10 @@ for line in strong_lines:
         y1 = int(y0 + 1000*(a))
         x2 = int(x0 - 1000*(-b))
         y2 = int(y0 - 1000*(a))
-        #cv2.line(img,(x1,y1),(x2,y2),(255,0,0),2)
-# cv2.imwrite('strongLines.jpg',img)
-# im = Image.open('strongLines.jpg')
-# im.show()
+        cv2.line(img,(x1,y1),(x2,y2),(255,0,0),2)
+cv2.imwrite('strongLines.jpg',img)
+im = Image.open('strongLines.jpg')
+im.show()
 
 
 # Calculate center line
@@ -246,6 +247,7 @@ cSlope = (c_line_y2 - c_line_y1)/(c_line_x2 - c_line_x1)
 
 # Calculate horizontal midline: pixel coord based
 if numHorz > 0 :
+    print("numHorz > 0")
     def intersection(l1, l2):
         rho1, theta1 = l1[0]
         rho2, theta2 = l2[0]
@@ -258,6 +260,7 @@ if numHorz > 0 :
         return [[x0, y0]]
 
     if numHorz > 1 :    # Both intersecting edges present
+        print("numHorz > 1")
         # Calculate 4 corners of intersection
         corners = []
         i = 0
@@ -273,6 +276,7 @@ if numHorz > 0 :
         centerY = int((corners[0][0][1] + corners[2][0][1] + corners[1][0][1] + corners[3][0][1])/4)
 
     else :              # One intersecting edge present; center is average of intersections
+        print("numHorz = 1")
         corners = [intersection(strong_lines[0], strong_lines[2]), intersection(strong_lines[1], strong_lines[2])]
         centerX = int((corners[0][0][0] + corners[1][0][0])/2)
         centerY = int((corners[0][0][1] + corners[1][0][1])/2)
@@ -299,78 +303,96 @@ else :
         print(coords)
     centerX = int((coords[0] + coords[1])/2)
 
-cv2.circle(img,(100,100),radius=1,color=(0,255,0),thickness=3)
-cv2.imwrite('circleTest.jpg',img)
+# cv2.circle(img,(100,100),radius=1,color=(0,255,0),thickness=3)
+# cv2.imwrite('circleTest.jpg',img)
+#
+print("centerX = ", centerX, "\txDim = ", len(img[0]))
+print("centerY = ", centerY, "\tyDim = ", len(img))
+cv2.circle(img,(centerX,centerY),radius=1,color=(0,255,0),thickness=2)
 
-# print("centerX = ", centerX, "\txDim = ", len(img[0]))
-# print("centerY = ", centerY, "\tyDim = ", len(img))
-# cv2.circle(img,(centerY,centerX),radius=2,color=(255,0,0),thickness=2)
-#
-# left = 0
-# right = 0
-# up = 0
-# down = 0
-#
-# # Check left of center
-# centerL = centerX - 100
-# cv2.circle(img,(centerY,centerL),radius=1,color=(0,0,255),thickness=2)
-# if gray[centerY][centerL] > 200 :
-#     left = 1
-#
-# # Check right of center
-# centerR = centerX + 100
-# cv2.circle(img,(centerY,centerR),radius=1,color=(0,0,100),thickness=2)
-# if gray[centerY][centerR] > 200 :
-#     right = 1
-#
-# # Check above center
-# centerU = centerY - 30
-# cv2.circle(img,(centerU,centerX),radius=1,color=(0,0,255),thickness=2)
-# if gray[centerU][centerX] > 200 :
-#     up = 1
-#
-# # Check below center
-# centerD = centerY + 50
-# cv2.circle(img,(centerD,centerX),radius=1,color=(0,0,255),thickness=2)
-# if gray[centerD][centerX] > 200 :
-#     down = 1
-#
-# cv2.imwrite('samplePoints.jpg',img)
-# #im = Image.open('samplePoints.jpg')
-# #im.show()
-# print("left, right, up, down: ", left, ", ", right, ", ", up, ", ", down)
-#
-#
-# type = -1
-# binary = 8*left + 4*right + 2*up + down
-# print("binary = ", binary)
-# print()
-# if binary == 3:
-#     type = 0
-#     print("straight")
-# elif binary == 15:
-#     type = 1
-#     print("cross")
-# elif binary == 13:
-#     type = 2
-#     print("straight T")
-# elif binary == 7:
-#     type = 3
-#     print("right T")
-# elif binary == 11:
-#     type = 4
-#     print("left T")
-# elif binary == 9:
-#     type = 5
-#     print("left corner")
-# elif binary == 5:
-#     type = 6
-#     print("right corner")
-# elif binary == 1:
-#     type = 7
-#     print("end")
-# else :
-#     print("error")
+
+left = 0
+right = 0
+up = 0
+down = 0
+
+# Check left of center
+centerL = centerX - 70
+cv2.circle(og_img,(centerL + 10,centerY + int(len(og_img)*c)),radius=1,color=(0,0,255),thickness=2)
+# cv2.circle(og_img,(centerL,centerY),radius=1,color=(0,0,255),thickness=2)
+# cv2.circle(img,(centerL,centerY),radius=1,color=(0,0,255),thickness=2)
+if og_gray[centerY + int(len(og_img)*c)][centerL + 10] > 200 :
+    left = 1
+
+# Check right of center
+centerR = centerX + 70
+cv2.circle(og_img,(centerR + 10,centerY + int(len(og_img)*c)),radius=1,color=(0,0,100),thickness=2)
+# cv2.circle(og_img,(centerR,centerY),radius=1,color=(0,0,255),thickness=2)
+# cv2.circle(img,(centerR,centerY),radius=1,color=(0,0,255),thickness=2)
+if og_gray[centerY + int(len(og_img)*c)][centerR + 10] > 200 :
+    right = 1
+
+# Check 20mm above center
+deltaU = int(math.log(1/60 + math.pow(2.8,-0.02*centerY),2.8)/-0.02)        # calculate pixel difference
+if deltaU == 0 :
+    deltaU = 15
+print("deltaU = ", deltaU)
+centerU = centerY - deltaU
+cv2.circle(og_img,(centerX + 10,centerU + int(len(og_img)*c)),radius=1,color=(0,0,255),thickness=2)
+# cv2.circle(og_img,(centerX,centerU),radius=1,color=(0,0,255),thickness=2)
+# cv2.circle(img,(centerX,centerU),radius=1,color=(0,0,255),thickness=2)
+if og_gray[centerU + int(len(og_img)*c)][centerX + 10] > 200 :
+    up = 1
+
+# Check 20mm below center
+deltaD = int(math.log(math.pow(2.8,-0.02*centerY) - 1/60,2.8)/-0.02)        # calculate pixel difference
+if deltaD == 0 :
+    deltaD = 15
+print("deltaD = ", deltaD)
+centerD = centerY + deltaD
+cv2.circle(og_img,(centerX + 10,centerD + int(len(og_img)*c)),radius=1,color=(0,0,255),thickness=2)
+# cv2.circle(og_img,(centerX,centerD),radius=1,color=(0,0,255),thickness=2)
+# cv2.circle(img,(centerX,centerD),radius=1,color=(0,0,255),thickness=2)
+if og_gray[centerD + int(len(og_img)*c)][centerX + 10] > 200 :
+    down = 1
+
+cv2.imwrite('samplePoints.jpg',img)
+cv2.imwrite('og_samplePoints.jpg',og_img)
+#im = Image.open('samplePoints.jpg')
+#im.show()
+print("left, right, up, down: ", left, ", ", right, ", ", up, ", ", down)
+
+
+type = -1
+binary = 8*left + 4*right + 2*up + down
+print("binary = ", binary)
+print()
+if binary == 3:
+    type = 0
+    print("straight")
+elif binary == 15:
+    type = 1
+    print("cross")
+elif binary == 13:
+    type = 2
+    print("straight T")
+elif binary == 7:
+    type = 3
+    print("right T")
+elif binary == 11:
+    type = 4
+    print("left T")
+elif binary == 9:
+    type = 5
+    print("left corner")
+elif binary == 5:
+    type = 6
+    print("right corner")
+elif binary == 1:
+    type = 7
+    print("end")
+else :
+    print("error")
 
     # print("pixel left of center: ", gray[int_ymid][int_center_left])
     # print("pixel up and left of center: ", gray[int_ymid-100][int_center_left])
