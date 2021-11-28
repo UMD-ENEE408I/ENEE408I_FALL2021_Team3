@@ -28,6 +28,7 @@ int prevTime = 0;
 int prevReadM1 = 0;
 int prevReadM2 = 0;
 float targetDeltaRead = 0; //desired change in position in encoder counts, will be const and det. by target vel
+float targetReadM1, targetReadM2;
 float curVelM1, curVelM2;
 float targetVel = 0.3; //vel in m/s
 //float prevVelM1 = 0;
@@ -78,6 +79,8 @@ void setup() {
   delay(5000);
   prevReadM1 = enc1.read();
   prevReadM2 = -1*enc2.read();
+  targetReadM1 = 0;
+  targetReadM2 = 0;
   prevTime = micros();
 }
 
@@ -88,8 +91,8 @@ void loop() {
   int curReadM2 = -1*enc2.read();
   float deltaTime = ((float) (curTime - prevTime))/1.0e6; //delta T [s]
   targetDeltaRead = targetVel*deltaTime/(0.032*M_PI)*360; //target change in encoder position for desired velocity [counts]
-  targetReadM1 = curReadM1 + targetDeltaRead; //target encoder position based on desired vel [counts]
-  targetReadM2 = curReadM2 + targetDeltaRead; //target encoder position based on desired vel [counts]
+  targetReadM1 = prevReadM1 + targetDeltaRead; //target encoder position based on desired vel [counts]
+  targetReadM2 = prevReadM2 + targetDeltaRead; //target encoder position based on desired vel [counts]
 
   /*
   float curRotM1 = (curReadM1 - prevReadM1)/deltaTime;  //encoder counts/second
@@ -105,20 +108,12 @@ void loop() {
   //prevReadM2 = curReadM2;
 
   //PID coeffs
-<<<<<<< Updated upstream
-  float KpM1 = 5;
-  float KiM1 = 0;
+  float KpM1 = 0.05;
+  float KiM1 = 0.01;
   float KdM1 = 0;
   
-  float KpM2 = 5;
-=======
-  float KpM1 = 0;
-  float KiM1 = 0;
-  float KdM1 = 0;
-  
-  float KpM2 = 0;
->>>>>>> Stashed changes
-  float KiM2 = 0;
+  float KpM2 = 0.05;
+  float KiM2 = 0.01;
   float KdM2 = 0;
 
   //error signal e(t)
@@ -134,7 +129,7 @@ void loop() {
 
   //corrected control signals u(t)
   float uM1 = KpM1*errorM1 + KiM1*integralM1 + KdM1*derivM1;
-  float uM2 = KpM2*errorM2 + KiM2*integralM2 + KdM1*derivM2;
+  float uM2 = KpM2*errorM2 + KiM2*integralM2 + KdM2*derivM2;
 
   //update stored error value
   prevErrorM1 = errorM1;
@@ -157,6 +152,13 @@ void loop() {
   M1_forward(M1_PWM);
   M2_forward(M2_PWM);
 
+  curVelM1 = (curReadM1 - prevReadM1)/deltaTime/360*0.032*M_PI;
+  curVelM2 = (curReadM2 - prevReadM2)/deltaTime/360*0.032*M_PI;
+  prevReadM1 = curReadM1;
+  prevReadM2 = curReadM2;
+  //prevTargetReadM1 = targetReadM1;
+  //prevTargetReadM2 = targetReadM2;
+  /*
   Serial.print("curVelM1:");
   Serial.print(curVelM1);
   Serial.print(" ");
@@ -164,7 +166,19 @@ void loop() {
   Serial.print(curVelM2);
   Serial.print(" ");
   Serial.print("targetVel:");
-  Serial.print(targetVel);
+  Serial.print(targetVel);*/
+  //Serial.print(" ");
+  Serial.print("curReadM1:");
+  Serial.print(curReadM1);
+  Serial.print(" ");
+  Serial.print("targetReadM1:");
+  Serial.print(targetReadM1);
+  Serial.print(" ");
+  Serial.print("curReadM2:");
+  Serial.print(curReadM2);
+  Serial.print(" ");
+  Serial.print("targetReadM2:");
+  Serial.print(targetReadM2);
   Serial.println();
 
   delay(10);
