@@ -7,7 +7,7 @@ from PIL import Image
 
 # Regular Houghlines with center line detection
 
-og_img = cv2.imread('92mm.jpg')                          # read image
+og_img = cv2.imread('100mm3_right_cal.jpg')                          # read image
                                                             # 59mm3_T_cal
                                                             # 60mm3_T_cal
                                                             # 92mm
