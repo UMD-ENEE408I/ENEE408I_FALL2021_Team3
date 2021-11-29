@@ -28,7 +28,7 @@ int prevTime = 0;
 int prevReadM1 = 0;
 int prevReadM2 = 0;
 float targetDeltaRead = 0; //desired change in position in encoder counts, will be const and det. by target vel
-float targetReadM1, targetReadM2;
+float targetRead;
 float curVelM1, curVelM2;
 float targetVel = 0.3; //vel in m/s
 //float prevVelM1 = 0;
@@ -79,8 +79,7 @@ void setup() {
   delay(5000);
   prevReadM1 = enc1.read();
   prevReadM2 = -1*enc2.read();
-  targetReadM1 = 0;
-  targetReadM2 = 0;
+  targetRead = 0;
   prevTime = micros();
 }
 
@@ -91,8 +90,7 @@ void loop() {
   int curReadM2 = -1*enc2.read();
   float deltaTime = ((float) (curTime - prevTime))/1.0e6; //delta T [s]
   targetDeltaRead = targetVel*deltaTime/(0.032*M_PI)*360; //target change in encoder position for desired velocity [counts]
-  targetReadM1 = prevReadM1 + targetDeltaRead; //target encoder position based on desired vel [counts]
-  targetReadM2 = prevReadM2 + targetDeltaRead; //target encoder position based on desired vel [counts]
+  targetRead = targetRead + targetDeltaRead; //target encoder position based on desired vel [counts]
 
   /*
   float curRotM1 = (curReadM1 - prevReadM1)/deltaTime;  //encoder counts/second
@@ -117,13 +115,13 @@ void loop() {
   float KdM2 = 0;
 
   //error signal e(t)
-  errorM1 = targetReadM1 - curReadM1;
+  errorM1 = targetRead - curReadM1;
   //integral signal (add error under the curve)
   integralM1 = integralM1 + errorM1*deltaTime;
   //derivative signal
   derivM1 = (errorM1 - prevErrorM1)/deltaTime;
 
-  errorM2 = targetReadM2 - curReadM2;
+  errorM2 = targetRead - curReadM2;
   integralM2 = integralM2 + errorM2*deltaTime;
   derivM2 = (errorM2 - prevErrorM2)/deltaTime;
 
@@ -171,14 +169,11 @@ void loop() {
   Serial.print("curReadM1:");
   Serial.print(curReadM1);
   Serial.print(" ");
-  Serial.print("targetReadM1:");
-  Serial.print(targetReadM1);
-  Serial.print(" ");
   Serial.print("curReadM2:");
   Serial.print(curReadM2);
   Serial.print(" ");
-  Serial.print("targetReadM2:");
-  Serial.print(targetReadM2);
+  Serial.print("targetRead:");
+  Serial.print(targetRead);
   Serial.println();
 
   delay(10);
