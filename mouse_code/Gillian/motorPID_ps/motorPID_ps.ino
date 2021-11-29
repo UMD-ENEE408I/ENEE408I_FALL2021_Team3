@@ -41,6 +41,7 @@ float errorM2 = 0;
 float integralM2 = 0;
 float derivM2 = 0;
 float prevErrorM2 = 0;
+float errorLimit = 150; //limit to ramp position up instead of trying to do so instantaneously
 
 Encoder enc1(M1_ENCA, M1_ENCB);
 Encoder enc2(M2_ENCA, M2_ENCB);
@@ -106,22 +107,26 @@ void loop() {
   //prevReadM2 = curReadM2;
 
   //PID coeffs
-  float KpM1 = 0.05;
-  float KiM1 = 0.01;
-  float KdM1 = 0;
+  float KpM1 = 0.2;
+  float KiM1 = 0.05;
+  float KdM1 = 0.1;
   
-  float KpM2 = 0.05;
-  float KiM2 = 0.01;
-  float KdM2 = 0;
+  float KpM2 = 0.2;
+  float KiM2 = 0.05;
+  float KdM2 = 0.1;
 
   //error signal e(t)
   errorM1 = targetRead - curReadM1;
+  if (errorM1 > errorLimit)
+    errorM1 = errorLimit;
   //integral signal (add error under the curve)
   integralM1 = integralM1 + errorM1*deltaTime;
   //derivative signal
   derivM1 = (errorM1 - prevErrorM1)/deltaTime;
 
   errorM2 = targetRead - curReadM2;
+  if (errorM2 > errorLimit)
+    errorM2 = errorLimit;
   integralM2 = integralM2 + errorM2*deltaTime;
   derivM2 = (errorM2 - prevErrorM2)/deltaTime;
 
@@ -134,14 +139,14 @@ void loop() {
   prevErrorM2 = errorM2;
 
   //adjust PWM on M1
-  M1_PWM = M1_PWM + uM1;
+  M1_PWM = uM1;
   if (M1_PWM > 255)
     M1_PWM = 255;
   else if (M1_PWM < 0)
     M1_PWM = 0;
 
   //adjust PWM on M2
-  M2_PWM = M2_PWM + uM2;
+  M2_PWM = uM2;
   if (M2_PWM > 255)
     M2_PWM = 255;
   else if (M2_PWM < 0)
@@ -174,6 +179,12 @@ void loop() {
   Serial.print(" ");
   Serial.print("targetRead:");
   Serial.print(targetRead);
+  Serial.print(" ");
+  Serial.print("errorM1:");
+  Serial.print(errorM1);
+  Serial.print(" ");
+  Serial.print("errorM2:");
+  Serial.print(errorM2);
   Serial.println();
 
   delay(10);
