@@ -1,5 +1,6 @@
 from flask import Flask, request, Response, render_template
 from itertools import count
+import random
 
 from werkzeug.wrappers import ETagRequestMixin
 
@@ -42,9 +43,11 @@ class IntersectionTypes:
 counter = count(0)
 
 currentNode = {1: None, 2: None, 3: None}
+currentDirection = {1: None, 2: None, 3: None} # use NESW Constants above
 nodeDict = {}
 
 startCoords = (0,0)
+mazeExit = (10,10)
 
 startDict = {1: False, 2: False, 3: False}
 
@@ -81,20 +84,200 @@ def createNode(x,y, type):
         return newNode
 
 def mazeFullyExplored():
-    for node in nodeDict:
+    for node in nodeDict.values():
         if not node.fullyExplored():
             return False
     
     return True
 
+# visualize graph
+# 3 o 
+# 2 |   
+# 1 └ ─ ┴
+#   1 2 3
+
+def visualizeMaze():
+
+    def nodeUnicode(num):
+        retStr = ' '
+        if num == 0:
+            retStr = ' '
+        elif num == 1:
+            retStr = '┼'
+        elif num == 2:
+            retStr = '┬'
+        elif num == 3:
+            retStr = '├'
+        elif num == 4:
+            retStr = '┤'
+        elif num == 5:
+            retStr = '┐'
+        elif num == 6:
+            retStr = '┌'
+        elif num == 7:
+            retStr = '│'
+        elif num == 8:
+            retStr = '─'
+        elif num == 9:
+            retStr = '─'
+        elif num == 10:
+            retStr = '│'
+        elif num == 11:
+            retStr = '┴'
+        elif num == 12:
+            retStr = '┘'
+        elif num == 13:
+            retStr = '└'
+        elif num == 14:
+            retStr = '─'
+        elif num == 15:
+            retStr = '│'
+
+        return retStr
+
+
+
+    def nodeMark(node):
+        retNum = 0
+        if node.type == IntersectionTypes.CROSS:
+            retNum = 1
+        elif node.type == IntersectionTypes.STRAIGHT_T:
+            retNum = 2
+        elif node.type == IntersectionTypes.RIGHT_T:
+            retNum = 3
+        elif node.type == IntersectionTypes.LEFT_T:
+            retNum = 4
+        elif node.type == IntersectionTypes.LEFT_CORNER:
+            retNum = 5
+        elif node.type == IntersectionTypes.RIGHT_CORNER:
+            retNum = 6
+        elif node.type == IntersectionTypes.END:
+            retNum = 7
+        elif node.type == IntersectionTypes.LEFT_END:
+            retNum = 8
+        elif node.type == IntersectionTypes.RIGHT_END:
+            retNum = 9
+        elif node.type == IntersectionTypes.REVERSE_END:
+            retNum = 10
+        elif node.type == IntersectionTypes.REVERSE_T:
+            retNum = 11
+        elif node.type == IntersectionTypes.REVERSE_LEFT_CORNER:
+            retNum = 12
+        elif node.type == IntersectionTypes.REVERSE_RIGHT_CORNER:
+            retNum = 13
+
+        return retNum
+
+    mazeDimension = 16
+
+    # 0 is space, 1 is o, 2 is -, 3 is |
+    arr = [ [0] * mazeDimension for i in range(mazeDimension)]
+
+    for coords in nodeDict.keys():
+        x = coords[0]
+        y = coords[1]
+
+        node = nodeDict[coords]
+        
+        # 1 CROSS
+        # 2 STRAIGHT_T
+        # 3 RIGHT_T
+        # 4 LEFT_T
+        # 5 LEFT_CORNER
+        # 6 RIGHT_CORNER
+        # 7 END
+        # 8 LEFT_END
+        # 9 RIGHT_END
+        # 10 REVERSE_END
+        # 11 REVERSE_T
+        # 12 REVERSE_LEFT_CORNER
+        # 13 REVERSE_RIGHT_CORNER
+        # 14 -
+        # 15 |
+
+        arr[x][y] = nodeMark(node)
+
+        if node.north is not None:
+            newx = node.north.x
+            newy = node.north.y
+
+            arr[newx][newy] = nodeMark(node.north)
+
+            i = y + 1
+
+            while i < newy:
+                arr[x][i] = 15
+                i += 1
+
+        if node.east is not None:
+            newx = node.east.x
+            newy = node.east.y
+
+            arr[newx][newy] = nodeMark(node.east)
+
+            i = x + 1
+
+            while i < newx:
+                arr[x][i] = 14
+                i += 1
+
+        if node.south is not None:
+            newx = node.south.x
+            newy = node.south.y
+
+            arr[newx][newy] = nodeMark(node.south)
+
+            i = y - 1
+
+            while newy < i:
+                arr[x][i] = 15
+                i -= 1
+
+        if node.west is not None:
+            newx = node.west.x
+            newy = node.west.y
+
+            arr[newx][newy] = nodeMark(node.west)
+
+            i = x - 1
+
+            while newx < i:
+                arr[x][i] = 14
+                i -= 1
+    
+    retStr = ""
+    for y in range(15, -1, -1):
+        line = ""
+        for x in range(0, 15):
+            line += nodeUnicode(arr[x][y])
+
+        if y < 10:
+            line = str(y + 1)+ '  ' + line + '<br>'
+        else:
+            line = str(y + 1)+ ' ' + line + '<br>'
+
+        retStr = retStr + line
+
+    return retStr
+
+
+
+#
+#
+# FLASK STUFF HERE
+#
+#
+
 @application.route('/')
 def home():
 
-    return {}
+    return visualizeMaze()
 
 
 @application.route('/initServer', methods = ['POST'])
 def initServer():
+    # get in form:
+    # {}
     data = request.form
 
 
@@ -191,7 +374,11 @@ def saveCoords(robot_id):
     newNode = createNode(nodex, nodey, nodeType)
 
     # Decision making here
-    
+    if newNode.fullyExplored():
+        if 
+
+        if nextDir == 1:
+
 
     # Return a direction command
     return x + " " + y

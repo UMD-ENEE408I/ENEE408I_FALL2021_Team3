@@ -82,8 +82,10 @@ void loop() {
       // move forward
     } else if (receive_packet.movementCommand == 2){
       // move left
+      // save time for distance calc
     } else if (receive_packet.movementCommand == 3){
       // move right
+      // save time for distance calc
     } else {
       // error
     }
