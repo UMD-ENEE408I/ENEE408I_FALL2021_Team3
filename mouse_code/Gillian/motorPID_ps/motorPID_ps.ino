@@ -28,7 +28,7 @@ int adc1_buf[8];
 int adc2_buf[8];
 
 bool arr[16];
-const unsigned int BUF_THRESHOLD = 600; //for G: 550, for C: 600, for D: 710
+const unsigned int BUF_THRESHOLD = 550; //for G: 550, for C: 600, for D: 710
 
 int prevTime = 0;
 int prevReadM1 = 0;
@@ -40,7 +40,7 @@ float targetVel = 0.2; //vel in m/s
 //float prevVelM1 = 0;
 //float prevVelM2 = 0;
 float errorM1 = 0;
-float integralM1 = 0.05; //CHANGE THIS VALUE (either incr or decr, but keep it greater than 0)
+float integralM1 = 0; //CHANGE THIS VALUE (either incr or decr, but keep it greater than 0)
 float derivM1 = 0;
 float prevErrorM1 = 0;
 float errorM2 = 0;
@@ -170,25 +170,35 @@ void loop() {
   for (int i = 0; i < 8; i++) {
     if (adc1_buf[i] < BUF_THRESHOLD) {
       arr[count] = true;
+      Serial.print("AH"); Serial.print("\t");
     } else {
       arr[count] = false;
+      Serial.print("--"); Serial.print("\t");
     }
 
     count = count + 1;
 
     if (adc2_buf[i] < BUF_THRESHOLD) {
       arr[count] = true;
+      Serial.print("AH"); Serial.print("\t");
     } else {
       arr[count] = false;
+      Serial.print("--"); Serial.print("\t");
     }
 
     count = count + 1;
   }
+  Serial.println();
 
-  if (arr[5] == true || arr[4] == true || arr[3] == true || arr[2] == true || arr[1] == true || arr[0] == true){
-    M2_PWM += 10;
-  } else if (arr[7] == true || arr[8] == true || arr[9] == true || arr[10] == true || arr[11] == true || arr[12] == true){
+  if (arr[5] == true || arr[4] == true || arr[3] == true || arr[2] == true || arr[1] == true || arr[0] == true){ //too far to the left --> turn right
     M1_PWM += 10;
+    M2_PWM -= 10;
+  } else if (arr[7] == true || arr[8] == true || arr[9] == true || arr[10] == true || arr[11] == true || arr[12] == true){ //too far to the right --> turn left
+    M2_PWM += 10;
+    M1_PWM -= 10;
+  } else if (!(arr[0] || arr[1] || arr[2] || arr[3] || arr[4] || arr[5] || arr[6] || arr[7] || arr[8] || arr[9] || arr[10] || arr[11] || arr[12])){ //stop if can't see line
+    M1_PWM = 0;
+    M2_PWM = 0;
   }
   
   M1_forward(M1_PWM);
@@ -210,6 +220,7 @@ void loop() {
   Serial.print("targetVel:");
   Serial.print(targetVel);*/
   //Serial.print(" ");
+  /*
   Serial.print("curReadM1:");
   Serial.print(curReadM1);
   Serial.print(" ");
@@ -225,6 +236,7 @@ void loop() {
   Serial.print("errorM2:");
   Serial.print(errorM2);
   Serial.println();
+  */
 
   delay(10);
 }
