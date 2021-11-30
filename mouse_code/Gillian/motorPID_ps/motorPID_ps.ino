@@ -28,7 +28,7 @@ int adc1_buf[8];
 int adc2_buf[8];
 
 bool arr[16];
-const unsigned int BUF_THRESHOLD = 550; //for G: 550, for C: 600, for D: 710
+const unsigned int BUF_THRESHOLD = 600; //for G: 550, for C: 600, for D: 710
 
 int prevTime = 0;
 int prevReadM1 = 0;
