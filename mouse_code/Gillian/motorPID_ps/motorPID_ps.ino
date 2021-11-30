@@ -30,7 +30,7 @@ int prevReadM2 = 0;
 float targetDeltaRead = 0; //desired change in position in encoder counts, will be const and det. by target vel
 float targetRead;
 float curVelM1, curVelM2;
-float targetVel = 0.3; //vel in m/s
+float targetVel = 0.2; //vel in m/s
 //float prevVelM1 = 0;
 //float prevVelM2 = 0;
 float errorM1 = 0;
