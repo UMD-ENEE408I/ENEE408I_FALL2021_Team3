@@ -24,6 +24,12 @@ const unsigned int M2_ENCB = 9;
 int M1_PWM = 0;
 int M2_PWM = 0;
 
+int adc1_buf[8];
+int adc2_buf[8];
+
+bool arr[16];
+const unsigned int BUF_THRESHOLD = 550; //for G: 550, for C: 600, for D: 710
+
 int prevTime = 0;
 int prevReadM1 = 0;
 int prevReadM2 = 0;
@@ -152,6 +158,39 @@ void loop() {
   else if (M2_PWM < 0)
     M2_PWM = 0;
 
+  //follow the line
+  int t_start = micros();
+  for (int i = 0; i < 8; i++) {
+    adc1_buf[i] = adc1.readADC(i);
+    adc2_buf[i] = adc2.readADC(i);
+  }
+  int t_end = micros();
+
+  int count = 0;
+  for (int i = 0; i < 8; i++) {
+    if (adc1_buf[i] < BUF_THRESHOLD) {
+      arr[count] = true;
+    } else {
+      arr[count] = false;
+    }
+
+    count = count + 1;
+
+    if (adc2_buf[i] < BUF_THRESHOLD) {
+      arr[count] = true;
+    } else {
+      arr[count] = false;
+    }
+
+    count = count + 1;
+  }
+
+  if (arr[5] == true || arr[4] == true || arr[3] == true || arr[2] == true || arr[1] == true || arr[0] == true){
+    M2_PWM += 10;
+  } else if (arr[7] == true || arr[8] == true || arr[9] == true || arr[10] == true || arr[11] == true || arr[12] == true){
+    M1_PWM += 10;
+  }
+  
   M1_forward(M1_PWM);
   M2_forward(M2_PWM);
 
