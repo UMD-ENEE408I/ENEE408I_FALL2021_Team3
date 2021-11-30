@@ -371,8 +371,13 @@ if binary == 3:
     type = 0
     print("straight")
 elif binary == 15:
-    type = 1
-    print("cross")
+    x = int(len(img[0])/2)
+    if og_gray[centerD + int(len(og_img)*c)][centerR + 10] > 200 and og_gray[centerD + int(len(og_img)*c)][centerL + 10] > 200 and og_gray[centerU + int(len(og_img)*c)][centerR + 10] > 200 and og_gray[centerU + int(len(og_img)*c)][centerL + 10] > 200:
+        type = 8
+        print("end")
+    else:
+        type = 1
+        print("cross")
 elif binary == 13:
     type = 2
     print("straight T")
