@@ -45,30 +45,30 @@ void loop() {
   // Make a packet and try to send it
   // In the default configuration this could delay 33ms if it fails
   // However when it works it takes 1-3ms
-  radio.stopListening();
-  send_packet.movementCommand = 0;
-  send_packet.distance = 20;
-  unsigned long start = millis();
-  bool success = radio.write(&send_packet, sizeof(packet_t));
-  unsigned long end = millis();
+  // radio.stopListening();
+  // send_packet.movementCommand = 0;
+  // send_packet.distance = 20;
+  // unsigned long start = millis();
+  // bool success = radio.write(&send_packet, sizeof(packet_t));
+  // unsigned long end = millis();
   
-  if (success) {
-    unsigned long end = millis();
-    Serial.print("send succeeded took: ");
-    Serial.print(end-start);
-    Serial.println(" millis");
-  } else {
-    unsigned long end = millis();
-    Serial.print("send failed took: ");
-    Serial.print(end-start);
-    Serial.println(" millis");
-  }
+  // if (success) {
+  //   unsigned long end = millis();
+  //   Serial.print("send succeeded took: ");
+  //   Serial.print(end-start);
+  //   Serial.println(" millis");
+  // } else {
+  //   unsigned long end = millis();
+  //   Serial.print("send failed took: ");
+  //   Serial.print(end-start);
+  //   Serial.println(" millis");
+  // }
 
   // Try to receive a packet (the Jetson should send a response)
   radio.startListening();
-  start = millis();
-  success = receivePacket(&receive_packet); // This will wait 10 milliseconds (can change)
-  end = millis();
+  unsigned long start = millis();
+  bool success = receivePacket(&receive_packet); // This will wait 10 milliseconds (can change)
+  unsigned long end = millis();
   if (success) {
     Serial.print("Received: ");
     Serial.print(receive_packet.movementCommand);
@@ -77,17 +77,18 @@ void loop() {
     Serial.println(" millis");
 
     if(receive_packet.movementCommand == 0){
-      // stop movement
+      Serial.println("stop movement");
     } else if (receive_packet.movementCommand == 1){
-      // move forward
+      Serial.println("move forward");
     } else if (receive_packet.movementCommand == 2){
-      // move left
+      Serial.println("move left");
       // save time for distance calc
     } else if (receive_packet.movementCommand == 3){
-      // move right
+      Serial.println("move right");
       // save time for distance calc
     } else {
       // error
+      Serial.println("error unknown movement command");
     }
     
   } else {
