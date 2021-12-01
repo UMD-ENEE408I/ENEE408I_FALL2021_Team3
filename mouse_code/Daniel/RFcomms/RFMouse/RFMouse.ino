@@ -24,8 +24,8 @@ typedef struct packet {
   int distance;
 } packet_t;
 
-packet_t send_packet = {0};
-packet_t receive_packet = {0};
+packet_t send_packet = {0, 0};
+packet_t receive_packet = {0, 0};
 
 void setup() {
   pinMode(ADC_1_CS, OUTPUT);
