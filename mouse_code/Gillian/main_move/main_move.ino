@@ -56,12 +56,12 @@ void M2_stop() {
 
 void turn_left(unsigned int PWM) {
   M1_backward(PWM);
-  M2_forward(PWM);
+  M2_forward(PWM+2);
 }
 
 void turn_right(unsigned int PWM) {
-  M1_forward(PWM+10);
-  M2_backward(PWM);
+  M1_forward(PWM);
+  M2_backward(PWM+3);
 }
 
 void stop_move() {
@@ -100,40 +100,10 @@ void readBar(){
   }
 }
 
-void setup() {
-  Serial.begin(115200);
-  adc1.begin(ADC_1_CS);  
-  adc2.begin(ADC_2_CS);  
-
-  pinMode(M1_IN1, OUTPUT);
-  pinMode(M1_IN2, OUTPUT);
-  pinMode(M2_IN1, OUTPUT);
-  pinMode(M2_IN2, OUTPUT);
-}
-
-void loop() {
-  //forward code -- PID controller
-
-  readBar();
-  /*
-  for (int i = 0; i < 8; i++) {
-    if (adc1_buf[i] < BUF_THRESHOLD) {
-      Serial.print("AH"); Serial.print("\t");
-    } else {
-      Serial.print("--"); Serial.print("\t");
-    }
-
-    if (adc2_buf[i] < BUF_THRESHOLD) {
-      Serial.print("AH"); Serial.print("\t");
-    } else {
-      Serial.print("--"); Serial.print("\t");
-    }
-  }
-  Serial.println();
-  delay(10);
-  */
-  int leftPWM = 35; //ADJUST THIS
-  int rightPWM = 35; //ADJUST THIS
+//make a full left turn on command
+void command_left() {
+  int PWM_L = 35; //ADJUST THIS
+  int PWM_R = 35; //ADJUST THIS
   //turn_left(leftPWM);
   //delay(10000);
   //turn left code
@@ -143,7 +113,7 @@ void loop() {
   while (!completedTurnL){
     Serial.print("turning left");
     Serial.println();
-    turn_left(leftPWM);
+    turn_left(PWM_L);
     completedTurnR = 0; //reset flag
     delay(10);
     Serial.println("stop move");
@@ -151,7 +121,7 @@ void loop() {
     Serial.println("reading bar");
     readBar();
     long checkBarTime = micros(); //time at which IR sensors were checked
-    if (arr[6] == true && (checkBarTime - ogComTime > 1000000)){  //if turn has executed for >1s, check if centered on straight path to ensure it's past any forward paths
+    if (arr[5] == true && (checkBarTime - ogComTime > 500000)){  //if turn has executed for >0.7s, check if centered on straight path to ensure it's past any forward paths
       completedTurnL = 1;
       Serial.println("centered");
     }/*else if (arr[5] == true || arr[4] == true || arr[3] == true || arr[2] == true || arr[1] == true || arr[0] == true){ //turned too far to the left, need to turn right
@@ -177,5 +147,73 @@ void loop() {
   
   Serial.println("done turning left");
   stop_move();
-  delay(10000);
+  //delay(1000);
+}
+
+void command_right(){
+  int PWM_R = 36; //ADJUST THIS
+  int PWM_L = 35; //ADJUST THIS
+  //turn_right(PWM_R);
+  
+  //right turn code
+  long ogComTime = micros(); //time at which original turn command was given
+  int passedIR8 = 0; //flag
+  int completedTurnR = 0; //flag
+  while (!completedTurnR){
+    Serial.println("turning right");
+    turn_right(PWM_R);
+    delay(10);
+    Serial.println("stop move");
+    stop_move();
+    Serial.println("reading bar");
+    readBar();
+    long checkBarTime = micros(); //time at which IR sensors were checked
+    if (arr[7] == true && passedIR8 == 0){
+      passedIR8 = 1;
+    } else if (arr[7] == true && (checkBarTime - ogComTime > 800000)){  //if turn has executed for >1s, check if centered on straight path to ensure it's past any forward paths
+      completedTurnR = 1;
+      Serial.println("centered");
+    }
+  }
+  
+  Serial.println("done turning right");
+  stop_move();
+  //delay(1000);
+}
+
+void setup() {
+  Serial.begin(115200);
+  adc1.begin(ADC_1_CS);  
+  adc2.begin(ADC_2_CS);  
+
+  pinMode(M1_IN1, OUTPUT);
+  pinMode(M1_IN2, OUTPUT);
+  pinMode(M2_IN1, OUTPUT);
+  pinMode(M2_IN2, OUTPUT);
+}
+
+void loop() {
+  //forward code -- PID controller
+
+  //readBar();
+  /*
+  for (int i = 0; i < 8; i++) {
+    if (adc1_buf[i] < BUF_THRESHOLD) {
+      Serial.print("AH"); Serial.print("\t");
+    } else {
+      Serial.print("--"); Serial.print("\t");
+    }
+
+    if (adc2_buf[i] < BUF_THRESHOLD) {
+      Serial.print("AH"); Serial.print("\t");
+    } else {
+      Serial.print("--"); Serial.print("\t");
+    }
+  }
+  Serial.println();
+  delay(10);
+  */
+  //command_left();
+  //command_right();
+  
 }
