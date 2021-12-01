@@ -22,10 +22,11 @@ typedef struct packet {
 //  uint8_t a_two_d_array[3][8];
   byte movementCommand; // 0 stop, 1 forward, 2 left, 3 right
   int distance;
+  byte response;
 } packet_t;
 
-packet_t send_packet = {0, 0};
-packet_t receive_packet = {0, 0};
+packet_t send_packet = {0, 0, 0};
+packet_t receive_packet = {0, 0, 0};
 
 void setup() {
   pinMode(ADC_1_CS, OUTPUT);
@@ -42,40 +43,10 @@ void setup() {
 }
 
 void loop() {
-  // Make a packet and try to send it
-  // In the default configuration this could delay 33ms if it fails
-  // However when it works it takes 1-3ms
-  // radio.stopListening();
-  // send_packet.movementCommand = 0;
-  // send_packet.distance = 20;
-  // unsigned long start = millis();
-  // bool success = radio.write(&send_packet, sizeof(packet_t));
-  // unsigned long end = millis();
-  
-  // if (success) {
-  //   unsigned long end = millis();
-  //   Serial.print("send succeeded took: ");
-  //   Serial.print(end-start);
-  //   Serial.println(" millis");
-  // } else {
-  //   unsigned long end = millis();
-  //   Serial.print("send failed took: ");
-  //   Serial.print(end-start);
-  //   Serial.println(" millis");
-  // }
-
-  // Try to receive a packet (the Jetson should send a response)
-  radio.startListening();
-  unsigned long start = millis();
-  bool success = receivePacket(&receive_packet); // This will wait 10 milliseconds (can change)
-  unsigned long end = millis();
-  if (success) {
-    Serial.print("Received: ");
-    Serial.print(receive_packet.movementCommand);
-    Serial.print(" took ");
-    Serial.print(end - start);
-    Serial.println(" millis");
-
+  // Try to receive a packet
+  if (radio.available()) {
+    radio.read(&receive_packet, sizeof(packet_t));
+    
     if(receive_packet.movementCommand == 0){
       Serial.println("stop movement");
     } else if (receive_packet.movementCommand == 1){
@@ -90,14 +61,36 @@ void loop() {
       // error
       Serial.println("error unknown movement command");
     }
-    
-  } else {
-    Serial.print("Receive failed took ");
-    Serial.print(end - start);
-    Serial.println(" millis");
-  }
 
-  delay(10);
+    // Send received packet to python script
+    // Serial.write(magic_serial_header, sizeof(magic_serial_header));
+    // Serial.write((uint8_t*)&receive_packet, sizeof(packet_t));
+
+    // // Python script is supposed to send a packet back immediately
+    // Serial.readBytes((uint8_t*)&send_packet, sizeof(packet_t));
+
+    send_packet.response = 4;
+    
+    radio.stopListening();
+  
+    // In the default configuration this could delay 33ms if it fails
+    // However when it works it takes 1-3ms
+    unsigned long start = millis();
+    if (radio.write(&send_packet, sizeof(packet_t))) {
+      unsigned long end = millis();
+      Serial.print("reply succeeded took: ");
+      Serial.print(end-start);
+      Serial.println(" millis");
+    } else {
+      unsigned long end = millis();
+      Serial.print("reply failed took: ");
+      Serial.print(end-start);
+      Serial.println(" millis");
+    }
+
+    // Switch back to RX before entering the main loop
+    radio.startListening();
+  }
 }
 
 #define MAX_PACKET_SIZE 32 // maximum packet size for radio

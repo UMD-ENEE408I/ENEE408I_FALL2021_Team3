@@ -20,12 +20,13 @@ typedef struct packet {
   //uint8_t a_two_d_array[3][8];
   byte movementCommand; // 0 stop, 1 forward, 2 left, 3 right
   int distance;
+  byte response;
 } packet_t;
 
 uint8_t magic_serial_header[4] = {0x8B, 0xEA, 0x27, 0x55};
 
-packet_t send_packet = {0, 0};
-packet_t receive_packet;
+packet_t send_packet = {0, 0, 0};
+packet_t receive_packet = {0, 0, 0};
 
 void setup() {
   Serial.begin(115200);
@@ -34,41 +35,54 @@ void setup() {
 }
 
 void loop() {
-  // Try to receive a packet
-  if (radio.available()) {
-    radio.read(&receive_packet, sizeof(packet_t));
-    
-    //Serial.print(receive_packet.a_float);
-    //Serial.print(" ");
-    //Serial.println(receive_packet.a_signed_int);
+// Make a packet and try to send it
+// In the default configuration this could delay 33ms if it fails
+// However when it works it takes 1-3ms
+radio.stopListening();
+send_packet.movementCommand = 0;
+send_packet.distance = 20;
+send_packet.response = 2;
+unsigned long start = millis();
+bool success = radio.write(&send_packet, sizeof(packet_t));
+unsigned long end = millis();
 
-    // Send received packet to python script
-    Serial.write(magic_serial_header, sizeof(magic_serial_header));
-    Serial.write((uint8_t*)&receive_packet, sizeof(packet_t));
+if (success) {
+  unsigned long end = millis();
+  Serial.print("send succeeded took: ");
+  Serial.print(end-start);
+  Serial.println(" millis");
+} else {
+  unsigned long end = millis();
+  Serial.print("send failed took: ");
+  Serial.print(end-start);
+  Serial.println(" millis");
+}
 
-    // Python script is supposed to send a packet back immediately
-    Serial.readBytes((uint8_t*)&send_packet, sizeof(packet_t));
-    
-    radio.stopListening();
+// Try to receive a packet (the Jetson should send a response)
+radio.startListening();
+start = millis();
+success = receivePacket(&receive_packet); // This will wait 10 milliseconds (can change)
+end = millis();
+if (success) {
+  Serial.print("Received: ");
+  Serial.print(receive_packet.movementCommand);
+  Serial.print(" took ");
+  Serial.print(end - start);
+  Serial.println(" millis");
+
+  if(receive_packet.response == 4){
+    Serial.println("got ok response");
+  } 
   
-    // In the default configuration this could delay 33ms if it fails
-    // However when it works it takes 1-3ms
-    unsigned long start = millis();
-    if (radio.write(&send_packet, sizeof(packet_t))) {
-      unsigned long end = millis();
-      //Serial.print("reply succeeded took: ");
-      //Serial.print(end-start);
-      //Serial.println(" millis");
-    } else {
-      unsigned long end = millis();
-      //Serial.print("reply failed took: ");
-      //Serial.print(end-start);
-      //Serial.println(" millis");
-    }
+} else {
+  Serial.print("Receive failed took ");
+  Serial.print(end - start);
+  Serial.println(" millis");
+}
 
-    // Switch back to RX before entering the main loop
-    radio.startListening();
-  }
+delay(10);
+
+  
 }
 
 #define MAX_PACKET_SIZE 32 // maximum packet size for radio
@@ -92,4 +106,20 @@ void setup_radio() {
   radio.startListening();                    // put radio in RX mode
 
   Serial.println("Radio hardware initialized");
+}
+bool receivePacket(packet_t* packet_p) {
+  unsigned long start = micros();
+  unsigned long timeout_micros = 10000;
+
+  // Wait for packet until timeout
+  while(!radio.available()) {
+    if (micros() - start > timeout_micros) {
+      return false;
+    }
+  }
+
+  // Success, radio has data available
+  radio.read(packet_p, sizeof(packet_t));
+
+  return true;
 }
