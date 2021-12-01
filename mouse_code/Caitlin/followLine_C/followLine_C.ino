@@ -7,6 +7,7 @@ Adafruit_MCP3008 adc2;
 
 const unsigned int ADC_1_CS = A3;
 const unsigned int ADC_2_CS = A2;
+const unsigned int RF_CS = A4;
 
 const unsigned int M1_IN_1 = 2;
 const unsigned int M1_IN_2 = 3;
@@ -31,7 +32,7 @@ void M1_backward(unsigned int PWM) {
 
 void M1_forward(unsigned int PWM) {
   analogWrite(M1_IN_1, 0);
-  analogWrite(M1_IN_2, PWM + 20);
+  analogWrite(M1_IN_2, PWM + 15);
 }
 
 void M1_stop() {
@@ -103,7 +104,10 @@ void setup() {
   Serial.begin(115200);
 
   adc1.begin(ADC_1_CS);  
-  adc2.begin(ADC_2_CS);  
+  adc2.begin(ADC_2_CS);
+
+  pinMode(RF_CS, OUTPUT);
+  digitalWrite(RF_CS, HIGH); // Without this the nRF24 will write to the SPI bus while the ADC's are also talking
 
   pinMode(M1_IN_1, OUTPUT);
   pinMode(M1_IN_2, OUTPUT);
