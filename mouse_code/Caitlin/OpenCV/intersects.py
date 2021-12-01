@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import math
-from PIL import Image
+# from PIL import Image
 
 # Regular Houghlines with center line detection
 ret = np.load("./Calibration/camera2_params/ret.npy")
@@ -135,8 +135,7 @@ for line in strong_lines:
         y2 = int(y0 - 1000*(a))
         cv2.line(img,(x1,y1),(x2,y2),(255,0,0),2)
 cv2.imwrite('strongLines.jpg',img)
-im = Image.open('strongLines.jpg')
-im.show()
+cv2.imshow('img', img)
 
 
 # Calculate center line
