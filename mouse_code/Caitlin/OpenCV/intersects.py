@@ -6,8 +6,19 @@ import math
 from PIL import Image
 
 # Regular Houghlines with center line detection
+ret = np.load("./Calibration/camera2_params/ret.npy")
+mtx = np.load("./Calibration/camera2_params/mtx.npy")
+dist = np.load("./Calibration/camera2_params/dist.npy")
+rvecs = np.load("./Calibration/camera2_params/rvecs.npy")
+tvecs = np.load("./Calibration/camera2_params/tvecs.npy")
+newmtx = np.load("./Calibration/camera2_params/newmtx.npy")
 
-og_img = cv2.imread('100mm3_right_cal.jpg')                          # read image
+img_uncal = cv2.imread('15cm.jpg')                          # read image
+og_img = cv2.undistort(img_uncal, mtx, dist, None, newmtx)
+c = 0.5                                                     # crop factor
+c_h = 50
+# print("center: ", og_img[17 + int(len(og_img)*c)][336 + 10])
+og_img_cp = og_img.copy()
                                                             # 59mm3_T_cal
                                                             # 60mm3_T_cal
                                                             # 92mm
@@ -16,8 +27,7 @@ og_img = cv2.imread('100mm3_right_cal.jpg')                          # read imag
                                                             # 88mm3_T_cal
                                                             # 100mm3_right_cal
 
-c = 0.6                                                     # crop factor
-img = og_img[int(len(og_img)*c):len(og_img)-40, 10:len(og_img[0])-10]      # crop image
+img = og_img[int(len(og_img)*c):len(og_img)-40, c_h:len(og_img[0])-c_h]      # crop image
 print("img dimensions: xLen = ", len(img[0]), "\tyLen = ", len(img))
 gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)                 # convert cropped image to grayscale
 og_gray = cv2.cvtColor(og_img,cv2.COLOR_BGR2GRAY)
@@ -55,13 +65,13 @@ numHorz = 0
 for n1 in range(0,len(lines)):
     for rho,theta in lines[n1]:
         if n1 == 0:
-            if -1/math.tan(theta) > 1:
+            if math.tan(theta) != 0 and -1/math.tan(theta) > 1:
                 strong_lines[0] = lines[n1]
                 numPosVert += 1
-            elif -1/math.tan(theta) < -1:
+            elif math.tan(theta) != 0 and -1/math.tan(theta) < -1:
                 strong_lines[1] = lines[n1]
                 numNegVert += 1
-            else :
+            elif math.tan(theta) != 0 and abs(1/math.tan(theta)) < 0.5 :
                 strong_lines[2] = lines[n1]
                 numHorz += 1
             n2 = n2 + 1
@@ -76,15 +86,15 @@ for n1 in range(0,len(lines)):
 
             #
             if not any(closeness) and n2 < 4:                                   # check if potential strong line
-                if -1/math.tan(theta) > 1 and numPosVert == 0:                  # check if pos vertical and no pos vert found
+                if math.tan(theta) != 0 and -1/math.tan(theta) > 1 and numPosVert == 0:                  # check if pos vertical and no pos vert found
                     strong_lines[0] = lines[n1]
                     numPosVert += 1
                     n2 += 1
-                elif -1/math.tan(theta) < -1 and numNegVert == 0:
+                elif math.tan(theta) != 0 and -1/math.tan(theta) < -1 and numNegVert == 0:
                     strong_lines[1] = lines[n1]
                     numNegVert += 1
                     n2 += 1
-                elif abs(1/math.tan(theta)) < 1 and numHorz < 2:                # check if horiz line and < 2 strong horizs
+                elif math.tan(theta) != 0 and abs(1/math.tan(theta)) < 0.5 and numHorz < 2:                # check if horiz line and < 2 strong horizs
                     #strong_lines = np.concatenate((strong_lines, [lines[n1]]), axis=0)
                     strong_lines[2 + numHorz] = lines[n1]
                     numHorz += 1
@@ -318,18 +328,18 @@ down = 0
 
 # Check left of center
 centerL = centerX - 70
-cv2.circle(og_img,(centerL + 10,centerY + int(len(og_img)*c)),radius=1,color=(0,0,255),thickness=2)
+cv2.circle(og_img,(centerL + c_h,centerY + int(len(og_img)*c)),radius=1,color=(0,0,255),thickness=2)
 # cv2.circle(og_img,(centerL,centerY),radius=1,color=(0,0,255),thickness=2)
 # cv2.circle(img,(centerL,centerY),radius=1,color=(0,0,255),thickness=2)
-if og_gray[centerY + int(len(og_img)*c)][centerL + 10] > 200 :
+if og_gray[centerY + int(len(og_img)*c)][centerL + c_h] > 200 :
     left = 1
 
 # Check right of center
 centerR = centerX + 70
-cv2.circle(og_img,(centerR + 10,centerY + int(len(og_img)*c)),radius=1,color=(0,0,100),thickness=2)
+cv2.circle(og_img,(centerR + c_h,centerY + int(len(og_img)*c)),radius=1,color=(0,0,100),thickness=2)
 # cv2.circle(og_img,(centerR,centerY),radius=1,color=(0,0,255),thickness=2)
 # cv2.circle(img,(centerR,centerY),radius=1,color=(0,0,255),thickness=2)
-if og_gray[centerY + int(len(og_img)*c)][centerR + 10] > 200 :
+if og_gray[centerY + int(len(og_img)*c)][centerR + c_h] > 200 :
     right = 1
 
 # Check 20mm above center
@@ -338,10 +348,10 @@ if deltaU == 0 :
     deltaU = 15
 print("deltaU = ", deltaU)
 centerU = centerY - deltaU
-cv2.circle(og_img,(centerX + 10,centerU + int(len(og_img)*c)),radius=1,color=(0,0,255),thickness=2)
+cv2.circle(og_img,(centerX + c_h,centerU + int(len(og_img)*c)),radius=1,color=(0,0,255),thickness=2)
 # cv2.circle(og_img,(centerX,centerU),radius=1,color=(0,0,255),thickness=2)
 # cv2.circle(img,(centerX,centerU),radius=1,color=(0,0,255),thickness=2)
-if og_gray[centerU + int(len(og_img)*c)][centerX + 10] > 200 :
+if og_gray[centerU + int(len(og_img)*c)][centerX + c_h] > 200 :
     up = 1
 
 # Check 20mm below center
@@ -350,11 +360,27 @@ if deltaD == 0 :
     deltaD = 15
 print("deltaD = ", deltaD)
 centerD = centerY + deltaD
-cv2.circle(og_img,(centerX + 10,centerD + int(len(og_img)*c)),radius=1,color=(0,0,255),thickness=2)
+cv2.circle(og_img,(centerX + c_h,centerD + int(len(og_img)*c)),radius=1,color=(0,0,255),thickness=2)
 # cv2.circle(og_img,(centerX,centerD),radius=1,color=(0,0,255),thickness=2)
 # cv2.circle(img,(centerX,centerD),radius=1,color=(0,0,255),thickness=2)
-if og_gray[centerD + int(len(og_img)*c)][centerX + 10] > 200 :
+if og_gray[centerD + int(len(og_img)*c)][centerX + c_h] > 200 :
     down = 1
+
+print("samplePoints:")
+# print("center: ", og_img_cp[centerY + int(len(og_img)*c)][centerX + 10])
+# print("up: ", og_img_cp[centerU + int(len(og_img)*c)][centerX + 10])
+# print("down: ", og_img_cp[centerD + int(len(og_img)*c)][centerX + 10])
+# print("left: ", og_img_cp[centerY + int(len(og_img)*c)][centerL + 10])
+# print("right: ", og_img_cp[centerY + int(len(og_img)*c)][centerR + 10])
+print("center: ", og_gray[centerY + int(len(og_img)*c)][centerX + c_h] > 200)
+print("up: ", og_gray[centerU + int(len(og_img)*c)][centerX + c_h] > 200)
+print("down: ", og_gray[centerD + int(len(og_img)*c)][centerX + c_h] > 200)
+print("left: ", og_gray[centerY + int(len(og_img)*c)][centerL + c_h] > 200)
+print("right: ", og_gray[centerY + int(len(og_img)*c)][centerR + c_h] > 200)
+print("up left: ", og_gray[centerU + int(len(og_img)*c)][centerL + c_h] > 200)
+print("up right: ", og_gray[centerU + int(len(og_img)*c)][centerR + c_h] > 200)
+print("down left: ", og_gray[centerD + int(len(og_img)*c)][centerL + c_h] > 200)
+print("down right: ", og_gray[centerD + int(len(og_img)*c)][centerR + c_h] > 200)
 
 cv2.imwrite('samplePoints.jpg',img)
 cv2.imwrite('og_samplePoints.jpg',og_img)
@@ -367,17 +393,15 @@ type = -1
 binary = 8*left + 4*right + 2*up + down
 print("binary = ", binary)
 print()
-if binary == 3:
+if og_gray[centerU + int(len(og_img)*c)][centerL + c_h] > 200 or og_gray[centerU + int(len(og_img)*c)][centerR + c_h] > 200 or og_gray[centerD + int(len(og_img)*c)][centerL + c_h] > 200 or og_gray[centerD + int(len(og_img)*c)][centerR + c_h] > 200:
+    type = 8
+    print("END")
+elif binary == 3:
     type = 0
     print("straight")
 elif binary == 15:
-    x = int(len(img[0])/2)
-    if og_gray[centerD + int(len(og_img)*c)][centerR + 10] > 200 and og_gray[centerD + int(len(og_img)*c)][centerL + 10] > 200 and og_gray[centerU + int(len(og_img)*c)][centerR + 10] > 200 and og_gray[centerU + int(len(og_img)*c)][centerL + 10] > 200:
-        type = 8
-        print("end")
-    else:
-        type = 1
-        print("cross")
+    type = 1
+    print("cross")
 elif binary == 13:
     type = 2
     print("straight T")
