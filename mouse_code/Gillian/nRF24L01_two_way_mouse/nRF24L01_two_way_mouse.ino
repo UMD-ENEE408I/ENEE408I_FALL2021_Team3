@@ -42,9 +42,9 @@ void setup() {
 void loop() {
   // Try to receive a packet (the Jetson should send a packet)
   radio.startListening();
-  start = millis();
-  success = receivePacket(&receive_packet); // This will wait 10 milliseconds (can change)
-  end = millis();
+  unsigned long start = millis();
+  bool success = receivePacket(&receive_packet); // This will wait 10 milliseconds (can change)
+  unsigned long end = millis();
   if (success) {
     Serial.print("Received: ");
     Serial.print(receive_packet.a_float);
@@ -65,9 +65,9 @@ void loop() {
   radio.stopListening();
   send_packet.a_float = -0.1;
   send_packet.a_signed_int++;
-  unsigned long start = millis();
-  bool success = radio.write(&send_packet, sizeof(packet_t));
-  unsigned long end = millis();
+  start = millis();
+  success = radio.write(&send_packet, sizeof(packet_t));
+  end = millis();
   
   if (success) {
     unsigned long end = millis();

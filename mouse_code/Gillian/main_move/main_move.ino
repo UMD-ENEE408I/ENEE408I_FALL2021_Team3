@@ -27,7 +27,7 @@ int adc1_buf[8];
 int adc2_buf[8];
 bool arr[16];
 
-const unsigned int BUF_THRESHOLD = 600; //for G: 560, for C: 600, for D: 710
+const unsigned int BUF_THRESHOLD = 710; //for G: 560, for C: 600, for D: 710
 int command_int = 0; //for testing, REMOVE IN FINAL CODE
 
 //PID vars
@@ -340,12 +340,8 @@ void command_left_pwm(){
     int curReadM2 = -1*enc2.read();
     float deltaTime = ((float) (curTime - prevTime))/1.0e6; //delta T [s]
     targetDeltaRead = targetVel*deltaTime/(0.032*M_PI)*360; //target change in encoder position for desired velocity [counts]
-    if (stopFlag == 0){  //only change target position if previous time doesn't have stopped motors
-      targetReadM1 = targetReadM1 + targetDeltaRead; //target encoder position based on desired vel [counts]
-      targetReadM2 = targetReadM2 + targetDeltaRead;
-    } else { //if motors were stopped at previous time, 
-      //don't change targetReadM1 or targetReadM2;
-    }
+    targetReadM1 = targetReadM1 + targetDeltaRead; //target encoder position based on desired vel [counts]
+    targetReadM2 = targetReadM2 + targetDeltaRead;
     //if the stop flag is high, the targetRead won't change from the previous
     prevTime = curTime;
 
@@ -440,26 +436,25 @@ void command_left_pwm(){
 }
 
 void command_forward(double dist){ //move forward by specified distance (in m)
-  long commandStartTime = micros();
-  long commandCurTime = commandStartTime;
-  long commandDeltaTime = dist*1.0e6/targetVel*1.1; //idk why this needs the additional scaling factor but it works
+  //long commandStartTime = micros();
+  //long commandCurTime = commandStartTime;
+  //long commandDeltaTime = dist*1.0e6/targetVel*1.1; //idk why this needs the additional scaling factor but it works
+  int completedForward = 0;
   prevReadM1 = enc1.read();
   prevReadM2 = -1*enc2.read();
   targetReadM1 = prevReadM1;
   targetReadM2 = prevReadM2;
+  float targetFinalReadM1 = dist/(0.032*M_PI)*360+prevReadM1;
+  float targetFinalReadM2 = dist/(0.032*M_PI)*360+prevReadM2;
   prevTime = micros();
-  while (commandCurTime - commandStartTime < commandDeltaTime){  //PID loop
+  while (!completedForward){  //PID loop
     long curTime = micros(); //time since Arduino started in microseconds
     int curReadM1 = enc1.read();
     int curReadM2 = -1*enc2.read();
     float deltaTime = ((float) (curTime - prevTime))/1.0e6; //delta T [s]
     targetDeltaRead = targetVel*deltaTime/(0.032*M_PI)*360; //target change in encoder position for desired velocity [counts]
-    if (stopFlag == 0){  //only change target position if previous time doesn't have stopped motors
-      targetReadM1 = targetReadM1 + targetDeltaRead; //target encoder position based on desired vel [counts]
-      targetReadM2 = targetReadM2 + targetDeltaRead;
-    } else { //if motors were stopped at previous time, 
-      //don't change targetReadM1 or targetReadM2;
-    }
+    targetReadM1 = targetReadM1 + targetDeltaRead; //target encoder position based on desired vel [counts]
+    targetReadM2 = targetReadM2 + targetDeltaRead;
     //if the stop flag is high, the targetRead won't change from the previous
     prevTime = curTime;
 
@@ -556,7 +551,11 @@ void command_forward(double dist){ //move forward by specified distance (in m)
     M2_forward(M2_PWM);
 
     delay(10);
-    commandCurTime = micros();
+    curReadM1 = enc1.read();
+    curReadM2 = -1*enc2.read();
+    if (curReadM1 > targetFinalReadM1 || curReadM2 > targetFinalReadM2)
+      completedForward = 1;
+    //commandCurTime = micros();
     //Serial.println(commandCurTime - commandStartTime);
   }
 
@@ -619,5 +618,5 @@ void loop() {
   */
   //command_left();
   delay(6000);
-  command_left_pwm();
+  command_forward(0.15);
 }
