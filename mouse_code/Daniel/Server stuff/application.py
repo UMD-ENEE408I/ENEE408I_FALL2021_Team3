@@ -279,7 +279,7 @@ def resetServer():
     # {"code": "codesonooopsies"}
     data = request.form
 
-    if code == "codesonooopsies":
+    if data["code"] == "codesonooopsies":
         counter = count(0)
 
         currentNode = {1: None, 2: None, 3: None}
