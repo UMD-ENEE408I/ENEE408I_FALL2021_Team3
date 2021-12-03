@@ -13,6 +13,12 @@ EAST = 1
 SOUTH = 2
 WEST = 3
 
+class RFDirectionCommands:
+    STOP = 0
+    FORWARD = 1
+    LEFT = 2
+    RIGHT = 3
+
 # Intersection Type Constants
 class ImageIntersectionTypes:
     CROSS = 1
@@ -45,18 +51,13 @@ counter = count(0)
 currentNode = {1: None, 2: None, 3: None}
 currentDirection = {1: None, 2: None, 3: None} # use NESW Constants above
 nodeDict = {}
+startNode = None
 
-startCoords = (0,0)
 mazeExit = (10,10)
-
-startDict = {1: False, 2: False, 3: False}
 
 class Node:
     def __init__(self, x, y, type):
-        self.north = None
-        self.east = None
-        self.south = None
-        self.west = None
+        self.directions = {NORTH: None, EAST: None, SOUTH: None, WEST: None}
         self.x = x
         self.y = y
         self.name = next(counter)
@@ -64,13 +65,13 @@ class Node:
         # self.verified = False
 
     def fullyExplored(self):
-        if not (self.type[NORTH] == 1 and self.north is not None):
+        if not (self.type[NORTH] == 1 and self.directions[NORTH] is not None):
             return False
-        if not (self.type[EAST] == 1 and self.east is not None):
+        if not (self.type[EAST] == 1 and self.directions[EAST] is not None):
             return False
-        if not (self.type[SOUTH] == 1 and self.south is not None):
+        if not (self.type[SOUTH] == 1 and self.directions[SOUTH] is not None):
             return False
-        if not (self.type[WEST] == 1 and self.west is not None):
+        if not (self.type[WEST] == 1 and self.directions[WEST] is not None):
             return False
 
         return True
@@ -197,11 +198,11 @@ def visualizeMaze():
 
         arr[x][y] = nodeMark(node)
 
-        if node.north is not None:
-            newx = node.north.x
-            newy = node.north.y
+        if node.directions[NORTH] is not None:
+            newx = node.directions[NORTH].x
+            newy = node.directions[NORTH].y
 
-            arr[newx][newy] = nodeMark(node.north)
+            arr[newx][newy] = nodeMark(node.directions[NORTH])
 
             i = y + 1
 
@@ -209,11 +210,11 @@ def visualizeMaze():
                 arr[x][i] = 15
                 i += 1
 
-        if node.east is not None:
-            newx = node.east.x
-            newy = node.east.y
+        if node.directions[EAST] is not None:
+            newx = node.directions[EAST].x
+            newy = node.directions[EAST].y
 
-            arr[newx][newy] = nodeMark(node.east)
+            arr[newx][newy] = nodeMark(node.directions[EAST])
 
             i = x + 1
 
@@ -221,11 +222,11 @@ def visualizeMaze():
                 arr[x][i] = 14
                 i += 1
 
-        if node.south is not None:
-            newx = node.south.x
-            newy = node.south.y
+        if node.directions[SOUTH] is not None:
+            newx = node.directions[SOUTH].x
+            newy = node.directions[SOUTH].y
 
-            arr[newx][newy] = nodeMark(node.south)
+            arr[newx][newy] = nodeMark(node.directions[SOUTH])
 
             i = y - 1
 
@@ -233,11 +234,11 @@ def visualizeMaze():
                 arr[x][i] = 15
                 i -= 1
 
-        if node.west is not None:
-            newx = node.west.x
-            newy = node.west.y
+        if node.directions[WEST] is not None:
+            newx = node.directions[WEST].x
+            newy = node.directions[WEST].y
 
-            arr[newx][newy] = nodeMark(node.west)
+            arr[newx][newy] = nodeMark(node.directions[WEST])
 
             i = x - 1
 
@@ -260,8 +261,6 @@ def visualizeMaze():
 
     return retStr
 
-
-
 #
 #
 # FLASK STUFF HERE
@@ -270,39 +269,64 @@ def visualizeMaze():
 
 @application.route('/')
 def home():
-
+    # should return a visualization of the stored maze
     return visualizeMaze()
 
 
-@application.route('/initServer', methods = ['POST'])
-def initServer():
+@application.route('/resetServer', methods = ['POST'])
+def resetServer():
     # get in form:
-    # {}
+    # {"code": "codesonooopsies"}
     data = request.form
 
+    if code == "codesonooopsies":
+        counter = count(0)
+
+        currentNode = {1: None, 2: None, 3: None}
+        currentDirection = {1: None, 2: None, 3: None} # use NESW Constants above
+        nodeDict = {}
+        startNode = None
+    else:
+        return {"response": "reset not done"}
+    
+    return {"response": "reset complete"}
 
 
-@application.route('/start/<robot_id>', methods = ['GET'])
+@application.route('/start/<robot_id>', methods = ['POST'])
 def start(robot_id):
     # get start coords (maze coords not cm)
-    # ex: {'x': 0, 'y':0}
-    if startDict[robot_id]:
-        return {response: "False"}
-    node = createNode(data['x'], data['y'])
+    # ex: {'x': 0, 'y':0, 'dir':0}
+    data = request.form
 
-    currentNode[robot_id] = node
+    # determine type of starting node
+    if data["dir"] == NORTH:
+        startType = IntersectionTypes.REVERSE_END
+    elif data["dir"] == EAST:
+        startType = IntersectionTypes.RIGHT_END
+    elif data["dir"] == SOUTH:
+        startType = IntersectionTypes.END
+    elif data["dir"] == WEST:
+        startType = IntersectionTypes.LEFT_END
+    else:
+        # error
+        print("ERROR at start()")
+        return {}
 
-    return {response: "True"}
+    startNode = createNode(data["x"], data["y"], startType)
+
+    currentNode[robot_id] = startNode
+
+    return RFDirectionCommands.FORWARD # always start by moving forward
 
 
 @application.route("/coords/<robot_id>", methods = ['POST'])
 def saveCoords(robot_id):
     # get coords in JSON format; all coords in cm
-    # ex: {'x': 10, 'y': 20, 'direction' = 0, 'nodex': 15, 'nodey': 20, 'type': 1]}
+    # ex: {'x': 10, 'y': 20, 'nodex': 15, 'nodey': 20, 'type': 1]}
     data = request.form
     x = data["x"]
     y = data["y"]
-    direction = data["direction"]
+    direction = currentDirection[robot_id]
     nodex = data["nodex"]
     nodey = data["nodey"]
     type = data["type"]
@@ -375,13 +399,27 @@ def saveCoords(robot_id):
 
     # Decision making here
     if newNode.fullyExplored():
-        if 
-
-        if nextDir == 1:
+        # try left
+        dir = (3 + direction) % 4
+        if newNode.directions[dir] is not None:
+            retDirection = 2 # left for RF module
+            currentDirection[robot_id] = dir
+        else:
+            # try right
+            dir = (1 + direction) % 4
+            if newNode.directions[dir] is not None:
+                retDirection = 3 # left for RF module
+                currentDirection[robot_id] = dir
+            else:
+                # try forward
+                dir = direction
+                if newNode.directions[dir] is not None:
+                    retDirection = 2 # left for RF module
+                    currentDirection[robot_id] = dir
 
 
     # Return a direction command
-    return x + " " + y
+    return retDirection
 
 @application.route("/clear")
 def clearData():
