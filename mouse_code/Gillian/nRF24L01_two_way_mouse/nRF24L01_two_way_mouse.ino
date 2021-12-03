@@ -40,6 +40,25 @@ void setup() {
 }
 
 void loop() {
+  // Try to receive a packet (the Jetson should send a packet)
+  radio.startListening();
+  start = millis();
+  success = receivePacket(&receive_packet); // This will wait 10 milliseconds (can change)
+  end = millis();
+  if (success) {
+    Serial.print("Received: ");
+    Serial.print(receive_packet.a_float);
+    Serial.print(" ");
+    Serial.print(receive_packet.a_signed_int);
+    Serial.print(" took ");
+    Serial.print(end - start);
+    Serial.println(" millis");
+  } else {
+    Serial.print("Receive failed took ");
+    Serial.print(end - start);
+    Serial.println(" millis");
+  }
+
   // Make a packet and try to send it
   // In the default configuration this could delay 33ms if it fails
   // However when it works it takes 1-3ms
@@ -59,25 +78,6 @@ void loop() {
     unsigned long end = millis();
     Serial.print("send failed took: ");
     Serial.print(end-start);
-    Serial.println(" millis");
-  }
-
-  // Try to receive a packet (the Jetson should send a response)
-  radio.startListening();
-  start = millis();
-  success = receivePacket(&receive_packet); // This will wait 10 milliseconds (can change)
-  end = millis();
-  if (success) {
-    Serial.print("Received: ");
-    Serial.print(receive_packet.a_float);
-    Serial.print(" ");
-    Serial.print(receive_packet.a_signed_int);
-    Serial.print(" took ");
-    Serial.print(end - start);
-    Serial.println(" millis");
-  } else {
-    Serial.print("Receive failed took ");
-    Serial.print(end - start);
     Serial.println(" millis");
   }
 

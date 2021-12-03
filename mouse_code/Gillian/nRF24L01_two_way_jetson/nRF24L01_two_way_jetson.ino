@@ -31,23 +31,11 @@ void setup() {
 }
 
 void loop() {
-  // Try to receive a packet
+  // Send a packet
   if (radio.available()) {
-    radio.read(&receive_packet, sizeof(packet_t));
-    
-    //Serial.print(receive_packet.a_float);
-    //Serial.print(" ");
-    //Serial.println(receive_packet.a_signed_int);
-
-    // Send received packet to python script
-    Serial.write(magic_serial_header, sizeof(magic_serial_header));
-    Serial.write((uint8_t*)&receive_packet, sizeof(packet_t));
-
-    // Python script is supposed to send a packet back immediately
+    // Python script sends a packet
     Serial.readBytes((uint8_t*)&send_packet, sizeof(packet_t));
-    
-    radio.stopListening();
-  
+
     // In the default configuration this could delay 33ms if it fails
     // However when it works it takes 1-3ms
     unsigned long start = millis();
@@ -63,8 +51,22 @@ void loop() {
       //Serial.println(" millis");
     }
 
-    // Switch back to RX before entering the main loop
-    radio.startListening();
+    // Try to receive a packet
+    radio.stopListening();
+    radio.read(&receive_packet, sizeof(packet_t));
+    
+    //Serial.print(receive_packet.a_float);
+    //Serial.print(" ");
+    //Serial.println(receive_packet.a_signed_int);
+
+    // Send received packet to python script
+    Serial.write(magic_serial_header, sizeof(magic_serial_header));
+    Serial.write((uint8_t*)&receive_packet, sizeof(packet_t));
+  
+    
+
+    // Switch back to TX before entering the main loop
+    radio.stopListening();
   }
 }
 

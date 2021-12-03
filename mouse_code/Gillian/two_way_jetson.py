@@ -55,15 +55,15 @@ if __name__ == '__main__':
     transmit_packet = [0.0, 0] + 3*8*[0]
 
     while True:
+        # Try to send packet
+        transmit_packet[0] += 1
+        #transmit_packet[1] += 1
+        print('Sending: {}'.format(transmit_packet))
+        send_packet(connection, transmit_packet)
+
         new_packet = try_receive_packet(connection)
         if new_packet is not None:
             # Got a packet, lets print it!
             print('Received: {}'.format(new_packet))
-
-            # Try to send something back
-            transmit_packet[0] += 1
-            #transmit_packet[1] += 1
-            print('Sending: {}'.format(transmit_packet))
-            send_packet(connection, transmit_packet)
         else:
             time.sleep(0.01)
