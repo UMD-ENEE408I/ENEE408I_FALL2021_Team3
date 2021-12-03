@@ -10,7 +10,7 @@ RF24 radio(7, 8); // 7 = CE, 8 = CSN
 
 uint8_t mouse_address[] = "mouseN";
 uint8_t jetson_address[] = "jetNN";
-uint8_t channel = 42; // (0-127) each team should use a different channel(s)
+uint8_t channel = 44; // (0-127) each team should use a different channel(s)
 
 // Max possible size is 32 bytes (this packet is 32 bytes)
 typedef struct packet {

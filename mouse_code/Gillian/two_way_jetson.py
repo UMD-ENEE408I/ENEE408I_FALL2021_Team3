@@ -50,7 +50,7 @@ def send_packet(connection, packet):
             break
 
 if __name__ == '__main__':
-    connection = serial.Serial(port='COM9', baudrate=115200)
+    connection = serial.Serial(port='COM14', baudrate=115200)
 
     transmit_packet = [0.0, 0] + 3*8*[0]
 
