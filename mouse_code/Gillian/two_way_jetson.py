@@ -50,7 +50,7 @@ def send_packet(connection, packet):
             break
 
 if __name__ == '__main__':
-    connection = serial.Serial(port='/dev/ttyUSB0', baudrate=115200)
+    connection = serial.Serial(port='COM9', baudrate=115200)
 
     transmit_packet = [0.0, 0] + 3*8*[0]
 
@@ -64,6 +64,6 @@ if __name__ == '__main__':
             transmit_packet[0] += 1
             #transmit_packet[1] += 1
             print('Sending: {}'.format(transmit_packet))
-            send_packet(connection, transmit_packet)                
+            send_packet(connection, transmit_packet)
         else:
             time.sleep(0.01)
