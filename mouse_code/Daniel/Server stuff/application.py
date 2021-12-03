@@ -199,6 +199,7 @@ def visualizeMaze():
         arr[x][y] = nodeMark(node)
 
         if node.directions[NORTH] is not None:
+            print("HERE")
             newx = node.directions[NORTH].x
             newy = node.directions[NORTH].y
 
@@ -219,7 +220,7 @@ def visualizeMaze():
             i = x + 1
 
             while i < newx:
-                arr[x][i] = 14
+                arr[i][y] = 14
                 i += 1
 
         if node.directions[SOUTH] is not None:
@@ -243,7 +244,7 @@ def visualizeMaze():
             i = x - 1
 
             while newx < i:
-                arr[x][i] = 14
+                arr[i][y] = 14
                 i -= 1
     
     retStr = ""
@@ -298,25 +299,31 @@ def start(robot_id):
     # ex: {'x': 0, 'y':0, 'dir':0}
     data = request.form
 
+    x = int(data["x"])
+    y = int(data["y"])
+    dir = int(data["dir"])
+
+
     # determine type of starting node
-    if data["dir"] == NORTH:
+    if dir == NORTH:
         startType = IntersectionTypes.REVERSE_END
-    elif data["dir"] == EAST:
+    elif dir == EAST:
         startType = IntersectionTypes.RIGHT_END
-    elif data["dir"] == SOUTH:
+    elif dir == SOUTH:
         startType = IntersectionTypes.END
-    elif data["dir"] == WEST:
+    elif dir == WEST:
         startType = IntersectionTypes.LEFT_END
     else:
         # error
         print("ERROR at start()")
         return {}
 
-    startNode = createNode(data["x"], data["y"], startType)
+    startNode = createNode(x, y, startType)
 
     currentNode[robot_id] = startNode
+    currentDirection[robot_id] = dir
 
-    return RFDirectionCommands.FORWARD # always start by moving forward
+    return {"response": RFDirectionCommands.FORWARD} # always start by moving forward
 
 
 @application.route("/coords/<robot_id>", methods = ['POST'])
@@ -324,12 +331,12 @@ def saveCoords(robot_id):
     # get coords in JSON format; all coords in cm
     # ex: {'x': 10, 'y': 20, 'nodex': 15, 'nodey': 20, 'type': 1]}
     data = request.form
-    x = data["x"]
-    y = data["y"]
+    # x = data["x"]
+    # y = data["y"]
     direction = currentDirection[robot_id]
-    nodex = data["nodex"]
-    nodey = data["nodey"]
-    type = data["type"]
+    nodex = int(data["nodex"])
+    nodey = int(data["nodey"])
+    type = int(data["type"])
 
     nodeType = None
 
@@ -397,29 +404,61 @@ def saveCoords(robot_id):
     # create new node
     newNode = createNode(nodex, nodey, nodeType)
 
+    # attach to the last node
+    # check if on same x axis
+    if nodex == currentNode[robot_id].x:
+        if nodey > currentNode[robot_id].y:
+            currentNode[robot_id].directions[NORTH] = newNode
+            newNode.directions[SOUTH] = currentNode[robot_id]
+            currentNode[robot_id] = newNode
+        elif nodey < currentNode[robot_id].y:
+            currentNode[robot_id].directions[SOUTH] = newNode
+            newNode.directions[NORTH] = currentNode[robot_id]
+            currentNode[robot_id] = newNode
+        else:
+            # error
+            print("error")
+    elif nodey == currentNode[robot_id].y:
+        if nodex > currentNode[robot_id].x:
+            currentNode[robot_id].directions[EAST] = newNode
+            newNode.directions[WEST] = currentNode[robot_id]
+            currentNode[robot_id] = newNode
+        elif nodex < currentNode[robot_id].x:
+            currentNode[robot_id].directions[WEST] = newNode
+            newNode.directions[EAST] = currentNode[robot_id]
+            currentNode[robot_id] = newNodes
+        else:
+            # error
+            print("error")
+    else:
+        print("error did not go straight")
+
     # Decision making here
     if newNode.fullyExplored():
         # try left
         dir = (3 + direction) % 4
         if newNode.directions[dir] is not None:
-            retDirection = 2 # left for RF module
+            retDirection = RFDirectionCommands.LEFT
             currentDirection[robot_id] = dir
         else:
             # try right
             dir = (1 + direction) % 4
             if newNode.directions[dir] is not None:
-                retDirection = 3 # left for RF module
+                retDirection = RFDirectionCommands.RIGHT
                 currentDirection[robot_id] = dir
             else:
                 # try forward
                 dir = direction
                 if newNode.directions[dir] is not None:
-                    retDirection = 2 # left for RF module
+                    retDirection = RFDirectionCommands.FORWARD
                     currentDirection[robot_id] = dir
-
-
+                else:
+                    # This is bad just stop for now
+                    retDirection = RFDirectionCommands.STOP
+    else:
+        retDirection = RFDirectionCommands.STOP
     # Return a direction command
-    return retDirection
+    return {"response": retDirection}
 
 @application.route("/clear")
 def clearData():
