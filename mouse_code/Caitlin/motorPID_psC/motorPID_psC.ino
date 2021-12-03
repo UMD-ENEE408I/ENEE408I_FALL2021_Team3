@@ -1,3 +1,4 @@
+//For C's mouse (different threshold and PWM values)
 //Uses motor encoder to determine current velocity + positional set points
 #include <Encoder.h>
 //#include <SimplyAtomic.h>
@@ -29,7 +30,7 @@ int adc1_buf[8];
 int adc2_buf[8];
 
 bool arr[16];
-const unsigned int BUF_THRESHOLD = 550; //for G: 550, for C: 600, for D: 710
+const unsigned int BUF_THRESHOLD = 600; //for G: 550, for C: 600, for D: 710
 
 int prevTime = 0;
 int prevReadM1 = 0;
@@ -198,20 +199,26 @@ void loop() {
 
     count = count + 1;
   }
-  Serial.println();
+  
 
   stopFlag = 0; //reset flag before checking light bar
-  if (arr[5] == true || arr[4] == true || arr[3] == true || arr[2] == true || arr[1] == true || arr[0] == true){ //too far to the right --> turn left
+  if (arr[6] == true){
+    Serial.print("forward");
+  } else if (arr[5] == true || arr[4] == true || arr[3] == true || arr[2] == true || arr[1] == true || arr[0] == true){ //too far to the right --> turn left
     M1_PWM += 10;
     M2_PWM -= 10;
+    Serial.print("turn left");
   } else if (arr[7] == true || arr[8] == true || arr[9] == true || arr[10] == true || arr[11] == true || arr[12] == true){ //too far to the left --> turn right
     M2_PWM += 10;
     M1_PWM -= 10;
+    Serial.print("turn right");
   } else if (!(arr[0] || arr[1] || arr[2] || arr[3] || arr[4] || arr[5] || arr[6] || arr[7] || arr[8] || arr[9] || arr[10] || arr[11] || arr[12])){ //stop if can't see line
     M1_PWM = 0;
     M2_PWM = 0;
     stopFlag = 1;
+    Serial.print("stop");
   }
+  Serial.println();
   
   M1_forward(M1_PWM);
   M2_forward(M2_PWM);
@@ -232,6 +239,7 @@ void loop() {
   Serial.print("targetVel:");
   Serial.print(targetVel);*/
   //Serial.print(" ");
+  /*
   Serial.print("curReadM1:");
   Serial.print(curReadM1);
   Serial.print(" ");
@@ -240,6 +248,7 @@ void loop() {
   Serial.print(" ");
   Serial.print("targetRead:");
   Serial.print(targetRead);
+  */
   /*Serial.print(" ");
   Serial.print("errorM1:");
   Serial.print(errorM1);

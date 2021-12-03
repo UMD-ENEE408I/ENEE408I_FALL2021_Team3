@@ -5,7 +5,7 @@ import matplotlib.image as mpimg
 import math
 # from PIL import Image
 
-vid = cv2.VideoCapture(1)
+vid = cv2.VideoCapture(0)
 
 ret = np.load("./Calibration/camera2_params/ret.npy")
 mtx = np.load("./Calibration/camera2_params/mtx.npy")
