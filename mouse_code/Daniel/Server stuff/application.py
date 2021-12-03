@@ -21,6 +21,7 @@ class RFDirectionCommands:
 
 # Intersection Type Constants
 class ImageIntersectionTypes:
+    LINE = 0
     CROSS = 1
     STRAIGHT_T = 2
     RIGHT_T = 3
@@ -28,6 +29,8 @@ class ImageIntersectionTypes:
     LEFT_CORNER = 5
     RIGHT_CORNER = 6
     END = 7
+    MAZE_END = 8
+    ERROR = -1
 
 class IntersectionTypes:
     CROSS = [1, 1, 1, 1]
@@ -273,6 +276,13 @@ def home():
     # should return a visualization of the stored maze
     return visualizeMaze()
 
+@application.route('/changeExit', methods = ['POST'])
+def changeExit():
+    # {"code": "codesonooopsies", "x": 10, "y": 10}
+    data = request.form
+
+    if data["code"] == "codesonooopsies":
+        mazeExit = (int(data["x"]), int(data["y"]))
 
 @application.route('/resetServer', methods = ['POST'])
 def resetServer():
@@ -426,7 +436,7 @@ def saveCoords(robot_id):
         elif nodex < currentNode[robot_id].x:
             currentNode[robot_id].directions[WEST] = newNode
             newNode.directions[EAST] = currentNode[robot_id]
-            currentNode[robot_id] = newNodes
+            currentNode[robot_id] = newNode
         else:
             # error
             print("error")
@@ -456,7 +466,30 @@ def saveCoords(robot_id):
                     # This is bad just stop for now
                     retDirection = RFDirectionCommands.STOP
     else:
-        retDirection = RFDirectionCommands.STOP
+        dir = (3 + direction) % 4
+        
+        # try left
+        if newNode.directions[dir] is None and newNode.type[dir] == 1:
+            retDirection = RFDirectionCommands.LEFT
+            currentDirection[robot_id] = dir
+        else:
+            # try right
+            dir = (1 + direction) % 4
+            if newNode.directions[dir] is None and newNode.type[dir] == 1:
+                retDirection = RFDirectionCommands.RIGHT
+                currentDirection[robot_id] = dir
+            else:
+                # try forward
+                dir = direction
+                if newNode.directions[dir] is None and newNode.type[dir] == 1:
+                    retDirection = RFDirectionCommands.FORWARD
+                    currentDirection[robot_id] = dir
+                else:
+                    # this is bad
+                    # deadend should turn 180 degrees and go backward
+                    print("deadend")
+                    retDirection = RFDirectionCommands.STOP
+    
     # Return a direction command
     return {"response": retDirection}
 
