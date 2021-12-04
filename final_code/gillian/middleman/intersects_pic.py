@@ -16,12 +16,12 @@ def close(vid):
 
 def intersect(vid):
 
-    ret = np.load("middleman/Calibration/camera2_params/ret.npy")
-    mtx = np.load("middleman/Calibration/camera2_params/mtx.npy")
-    dist = np.load("middleman/Calibration/camera2_params/dist.npy")
-    rvecs = np.load("middleman/Calibration/camera2_params/rvecs.npy")
-    tvecs = np.load("middleman/Calibration/camera2_params/tvecs.npy")
-    newmtx = np.load("middleman/Calibration/camera2_params/newmtx.npy")
+    ret = np.load("middleman/Calibration/camera3_params/ret.npy")
+    mtx = np.load("middleman/Calibration/camera3_params/mtx.npy")
+    dist = np.load("middleman/Calibration/camera3_params/dist.npy")
+    rvecs = np.load("middleman/Calibration/camera3_params/rvecs.npy")
+    tvecs = np.load("middleman/Calibration/camera3_params/tvecs.npy")
+    newmtx = np.load("middleman/Calibration/camera3_params/newmtx.npy")
 
     type = -1
     center_dist = -1
@@ -33,22 +33,27 @@ def intersect(vid):
         og_img = cv2.undistort(img, mtx, dist, None, newmtx)
         cv2.imwrite('og_img.jpg', og_img)
 
+        # Cam 1
+        # c = 0.15
+        # c_add = 0
+        # c_h = 40
+        # c_v = 70
 
-        # Cam 2
-        c = 0.3
-        c_add = 0
-        c_h = 50
-        c_v = 150
+        # # Cam 2
+        # c = 0.3
+        # c_add = 0
+        # c_h = 50
+        # c_v = 150
 
         # # Cam 3
-        # c = 0.3
-        # c_add = 20
-        # c_h = 50
-        # c_v = 165
-        # og_img_cp = og_img.copy()
+        c = 0.1
+        c_add = 0
+        c_h = 20
+        c_v = 40
 
         img = og_img[int(len(og_img)*c + c_add):len(og_img)-c_v, c_h:len(og_img[0])-c_h]      # crop image
         print("og_img dimensions: xLen = ", len(og_img[0]), "\tyLen = ", len(og_img))
+        print("img dimensions: xLen = ", len(img[0]), "\tyLen = ", len(img))
         gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)                 # convert cropped image to grayscale
         og_gray = cv2.cvtColor(og_img,cv2.COLOR_BGR2GRAY)
         edges = cv2.Canny(gray,200,255)                             # edge detection with Canny
@@ -71,25 +76,26 @@ def intersect(vid):
 
 
             # Extract strong lines
-            strong_lines = np.zeros([4,1,2])        # [posVert, negVert, horz1, horz2]
+            strong_lines = np.zeros([4,1,2])        # [vert1, vert2, horz1, horz2]
 
             n2 = 0
-            numPosVert = 0
-            numNegVert = 0
+            numVert = 0
             numHorz = 0
             for n1 in range(0,len(lines)):
                 for rho,theta in lines[n1]:
                     if n1 == 0:
-                        if math.tan(theta) != 0 and -1/math.tan(theta) > 1:
+                        if math.tan(theta) != 0 and abs(-1/math.tan(theta)) > 1:
                             strong_lines[0] = lines[n1]
-                            numPosVert += 1
-                        elif math.tan(theta) != 0 and -1/math.tan(theta) < -1:
-                            strong_lines[1] = lines[n1]
-                            numNegVert += 1
-                        elif math.tan(theta) != 0 and abs(1/math.tan(theta)) < 0.5 and (-1/math.tan(theta)*(int(len(img[0])/2) - np.cos(theta)*rho) + np.sin(theta)*rho) > 0:
-                            print("y coordinate at x = ", int(len(img[0])/2), ": ", (-1/math.tan(theta)*(int(len(img[0])/2) - np.cos(theta)*rho) + np.sin(theta)*rho))
-                            strong_lines[2] = lines[n1]
-                            numHorz += 1
+                            numVert += 1
+                            print("stored vert1")
+                        # slope not vertical and |slope|<0.5 and
+                        elif math.tan(theta) != 0 and abs(1/math.tan(theta)) < 0.5:
+                            y_center = -1/math.tan(theta)*(int(len(img[0])/2) - np.cos(theta)*rho) + np.sin(theta)*rho
+                            print("y coordinate at x = ", int(len(img[0])/2), ": ", y_center)
+                            cv2.circle(og_img,(int(len(img[0])/2) + c_h,int(y_center) + int(len(og_img)*c + c_add)),radius=1,color=(0,255,0),thickness=2)
+                            if y_center > 0 and y_center < len(img[0]):
+                                strong_lines[2] = lines[n1]
+                                numHorz += 1
                         n2 = n2 + 1
                     else:
                         if rho < 0:
@@ -102,19 +108,34 @@ def intersect(vid):
 
                         #
                         if not any(closeness) and n2 < 4:                                   # check if potential strong line
-                            if math.tan(theta) != 0 and -1/math.tan(theta) > 1 and numPosVert == 0:                  # check if pos vertical and no pos vert found
-                                strong_lines[0] = lines[n1]
-                                numPosVert += 1
-                                n2 += 1
-                            elif math.tan(theta) != 0 and -1/math.tan(theta) < -1 and numNegVert == 0:
-                                strong_lines[1] = lines[n1]
-                                numNegVert += 1
-                                n2 += 1
-                            elif math.tan(theta) != 0 and abs(1/math.tan(theta)) < 0.5 and (-1/math.tan(theta)*(int(len(img[0])/2) - np.cos(theta)*rho) + np.sin(theta)*rho) > 0 and numHorz < 2:                # check if horiz line and < 2 strong horizs
+                            if math.tan(theta) != 0 and abs(-1/math.tan(theta)) > 1 and numVert < 2:                  # check if pos vertical and no pos vert found
+                                x_center = (int(len(img)/2) - np.sin(theta)*rho)/(-1/math.tan(theta)) + np.cos(theta)*rho
+                                print("x coordinate at y = ", int(len(img)/2), ": ", x_center)
+                                if x_center > 0 and x_center < len(img):
+                                    if numVert > 0:
+                                        if abs(x_center - ((int(len(img)/2) - np.sin(strong_lines[0][0][1])*strong_lines[0][0][0])/(-1/math.tan(strong_lines[0][0][1])) + np.cos(strong_lines[0][0][1])*strong_lines[0][0][0])) > 10:
+                                            strong_lines[numVert] = lines[n1]
+                                            numVert += 1
+                                            n2 += 1
+                                            print("stored vert2")
+                                    else:
+                                        strong_lines[0] = lines[n1]
+                                        numVert += 1
+                                        n2 += 1
+                                        print("stored vert1")
+                            elif math.tan(theta) != 0 and abs(1/math.tan(theta)) < 0.5 and numHorz < 2:                # check if horiz line and < 2 strong horizs
                                 #strong_lines = np.concatenate((strong_lines, [lines[n1]]), axis=0)
-                                if numHorz > 0:
-                                    # Check for gap between potential horizontal and existing horizontal
-                                    if abs((-1/math.tan(theta)*(int(len(img[0])/2) - np.cos(theta)*rho) + np.sin(theta)*rho) - (-1/math.tan(strong_lines[2][0][1])*(int(len(img[0])/2) - np.cos(strong_lines[2][0][1])*strong_lines[2][0][0]) + np.sin(strong_lines[2][0][1])*strong_lines[2][0][0])) > 10:
+                                y_center = -1/math.tan(theta)*(int(len(img[0])/2) - np.cos(theta)*rho) + np.sin(theta)*rho
+                                print("y coordinate at x = ", int(len(img[0])/2), ": ", y_center)
+                                cv2.circle(og_img,(int(len(img[0])/2) + c_h,int(y_center) + int(len(og_img)*c + c_add)),radius=1,color=(0,255,0),thickness=2)
+                                if y_center > 0 and y_center < len(img[0]):
+                                    if numHorz > 0:
+                                        # Check for gap between potential horizontal and existing horizontal
+                                        if abs(y_center - (-1/math.tan(strong_lines[2][0][1])*(int(len(img[0])/2) - np.cos(strong_lines[2][0][1])*strong_lines[2][0][0]) + np.sin(strong_lines[2][0][1])*strong_lines[2][0][0])) > 10:
+                                            strong_lines[2 + numHorz] = lines[n1]
+                                            numHorz += 1
+                                            n2 += 1
+                                    else:
                                         strong_lines[2 + numHorz] = lines[n1]
                                         numHorz += 1
                                         n2 += 1
@@ -126,15 +147,15 @@ def intersect(vid):
             # print(strong_lines.shape)
 
 
-            if numPosVert + numNegVert > 1:
+            if numVert > 1:
                 # Remove unnecessary array elements
                 if numHorz < 2:
                     for n in range(numHorz + 2, 4):
                         #print("deleting n = ", 5-n)
                         strong_lines = np.delete(strong_lines, len(strong_lines)-1, 0)
 
-                # print("strong lines after deletion: ")
-                # print(strong_lines)
+                print("strong lines after deletion: ")
+                print(strong_lines)
 
                 # Display strong lines
                 i = 0
@@ -249,8 +270,9 @@ def intersect(vid):
 
                 print("centerX = ", centerX, "\txDim = ", len(img[0]))
                 print("centerY = ", centerY, "\tyDim = ", len(img))
-                # center_dist = 18*math.pow(1.1,-0.1*centerY) + 5           # distance eq for cam 3, mouse G
-                center_dist = 16*math.pow(1.07,-0.1*centerY) + 4            # distance eq for cam 2, mouse C
+                # center_dist = 13*math.pow(1.03,-0.2*centerY) + 8           # distance eq for cam 1, mouse C
+                center_dist = 13*math.pow(1.05,-0.1*centerY) + 7           # distance eq for cam 3, mouse D
+                # center_dist = 16*math.pow(1.07,-0.1*centerY) + 4            # distance eq for cam 2, mouse G
                 print("distance to intersection: ", center_dist)
                 cv2.circle(img,(centerX,centerY),radius=1,color=(0,255,0),thickness=2)
                 cv2.imwrite('samplePoints.jpg', img)
@@ -263,14 +285,14 @@ def intersect(vid):
                 down = 0
 
                 # Check left of center
-                centerL = centerX - 70
+                centerL = centerX - 90
                 cv2.circle(og_img,(centerL + c_h,centerY + int(len(og_img)*c)),radius=1,color=(0,0,255),thickness=2)
                 if og_gray[centerY + int(len(og_img)*c) + c_add][centerL + c_h] > 200 :
                     left = 1
                 # cv2.imwrite('og_samplePoints.jpg',og_img)
 
                 # Check right of center
-                centerR = centerX + 70
+                centerR = centerX + 90
                 cv2.circle(og_img,(centerR + c_h,centerY + int(len(og_img)*c)),radius=1,color=(0,0,100),thickness=2)
                 if og_gray[centerY + int(len(og_img)*c) + c_add][centerR + c_h] > 200 :
                     right = 1
@@ -281,7 +303,10 @@ def intersect(vid):
                 # if deltaU == 0 :
                 #     deltaU = 15
                 # print("deltaU = ", deltaU)
-                deltaU = 30
+                # deltaU = 70     # deltaU for cam3
+                # deltaU = int(math.log(2/13 + math.pow(1.03,-0.2*centerY),1.03)/-0.2)     # deltaU for cam1
+                deltaU = 70
+                print("deltaU = ", deltaU)
                 centerU = centerY - deltaU
                 if centerU < 0:
                     centerU = 0
@@ -295,11 +320,14 @@ def intersect(vid):
                 # if deltaD == 0 :
                 #     deltaD = 15
                 # print("deltaD = ", deltaD)
-                deltaD = 50
+                # deltaD = 80     # deltaU for cam3
+                # deltaD = int(math.log(math.pow(1.03,-0.2*centerY) - 2/13,1.03)/-0.2)    # deltaD for cam1
+                deltaD = 100
+                print("deltaD = ", deltaD)
                 centerD = centerY + deltaD
                 if centerD >= len(img):
                     centerD = len(img) - 1
-                print("centerX + c_h: ", centerX + c_h, "\tcenterD+adj: ", centerD + int(len(og_img)*c))
+                # print("centerX + c_h: ", centerX + c_h, "\tcenterD+adj: ", centerD + int(len(og_img)*c))
                 cv2.circle(og_img,(centerX + c_h,centerD + int(len(og_img)*c)),radius=1,color=(255,255,0),thickness=2)
                 if og_gray[centerD + int(len(og_img)*c) + c_add][centerX + c_h] > 200 :
                     down = 1
@@ -356,13 +384,13 @@ def intersect(vid):
             else:
                 print("No path detected")
 
-    return (type, int(center_dist))
+    return [type, int(center_dist)]
 
-# v = initialize()
-# print("start 1")
-# arr = intersect(v)
-# print("\n\ntype1 = ", arr[0], " at ", arr[1], " cm")
-# print("start 2")
-# t = intersect(v)
-# print("\n\ntype2 = ", t)
-# close(v)
+v = initialize()
+print("start 1")
+arr = intersect(v)
+print("\n\ntype1 = ", arr[0], " at ", arr[1], " cm")
+print("start 2")
+t = intersect(v)
+print("\n\ntype2 = ", t)
+close(v)

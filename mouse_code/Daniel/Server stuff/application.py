@@ -1,3 +1,4 @@
+from os import linesep
 from flask import Flask, request, Response, render_template
 from itertools import count
 import random
@@ -46,15 +47,18 @@ class IntersectionTypes:
     REVERSE_T = [1, 1, 0, 1]
     REVERSE_LEFT_CORNER = [1, 0, 0, 1]
     REVERSE_RIGHT_CORNER = [1, 1, 0, 0]
+    LINE = [0, 0, 0, 0]
+    ERROR = None
     
-
+class serverVars:
 # Counter for naming Nodes
-counter = count(0)
+    counter = count(0)
 
-currentNode = {'1': None, '2': None, '3': None}
-currentDirection = {'1': None, '2': None, '3': None} # use NESW Constants above
-nodeDict = {}
-startNode = None
+    currentNode = {'1': None, '2': None, '3': None}
+    currentDirection = {'1': None, '2': None, '3': None} # use NESW Constants above
+    currentCoords = {'1': (None, None), '2': (None, None), '3': (None, None)}
+    nodeDict = {}
+    startNode = None
 
 mazeExit = (10,10)
 
@@ -63,7 +67,7 @@ class Node:
         self.directions = {NORTH: None, EAST: None, SOUTH: None, WEST: None}
         self.x = x
         self.y = y
-        self.name = next(counter)
+        self.name = next(serverVars.counter)
         self.type = type # [N E S W] 0 for walls ex: [0 0 1 1] for a left turn
         # self.verified = False
 
@@ -82,15 +86,15 @@ class Node:
         return True
 
 def createNode(x,y, type):
-    if (x,y) in nodeDict.keys():
-        return nodeDict[(x,y)]
+    if (x,y) in serverVars.nodeDict.keys():
+        return serverVars.nodeDict[(x,y)]
     else:
         newNode = Node(x,y,type)
-        nodeDict[(x,y)] = newNode
+        serverVars.nodeDict[(x,y)] = newNode
         return newNode
 
 def mazeFullyExplored():
-    for node in nodeDict.values():
+    for node in serverVars.nodeDict.values():
         if not node.fullyExplored():
             return False
     
@@ -179,11 +183,11 @@ def visualizeMaze():
     # 0 is space, 1 is o, 2 is -, 3 is |
     arr = [ [0] * mazeDimension for i in range(mazeDimension)]
 
-    for coords in nodeDict.keys():
+    for coords in serverVars.nodeDict.keys():
         x = coords[0]
         y = coords[1]
 
-        node = nodeDict[coords]
+        node = serverVars.nodeDict[coords]
         
         # 1 CROSS
         # 2 STRAIGHT_T
@@ -292,12 +296,13 @@ def resetServer():
     data = request.form
 
     if data["code"] == "codesonooopsies":
-        counter = count(0)
+        serverVars.counter = count(0)
 
-        currentNode = {1: None, 2: None, 3: None}
-        currentDirection = {1: None, 2: None, 3: None} # use NESW Constants above
-        nodeDict = {}
-        startNode = None
+        serverVars.currentNode = {1: None, 2: None, 3: None}
+        serverVars.currentDirection = {1: None, 2: None, 3: None} # use NESW Constants above
+        serverVars.nodeDict = {}
+        serverVars.startNode = None
+        serverVars.currentCoords = {'1': (None, None), '2': (None, None), '3': (None, None)}
     else:
         return {"response": "reset not done"}
     
@@ -331,8 +336,9 @@ def start(robot_id):
 
     startNode = createNode(x, y, startType)
 
-    currentNode[robot_id] = startNode
-    currentDirection[robot_id] = dir
+    serverVars.currentNode[robot_id] = startNode
+    serverVars.currentDirection[robot_id] = dir
+    serverVars.currentCoords[robot_id] = (x, y+1)
 
     return {"response": RFDirectionCommands.FORWARD} # always start by moving forward
 
@@ -344,9 +350,11 @@ def saveCoords(robot_id):
     data = request.form
     # x = data["x"]
     # y = data["y"]
-    direction = currentDirection[robot_id]
-    nodex = int(data["nodex"])
-    nodey = int(data["nodey"])
+    direction = serverVars.currentDirection[robot_id]
+    # nodex = int(data["nodex"])
+    # nodey = int(data["nodey"])
+    nodex = serverVars.currentCoords[robot_id][0]
+    nodey = serverVars.currentCoords[robot_id][1]
     type = int(data["type"])
 
     nodeType = None
@@ -366,6 +374,10 @@ def saveCoords(robot_id):
             nodeType = IntersectionTypes.RIGHT_CORNER
         elif type == ImageIntersectionTypes.END:
             nodeType = IntersectionTypes.END
+        elif type == ImageIntersectionTypes.LINE:
+            type = IntersectionTypes.LINE
+        else:
+            type = IntersectionTypes.ERROR
     elif direction == EAST:
         if type == ImageIntersectionTypes.CROSS:
             nodeType = IntersectionTypes.CROSS
@@ -381,6 +393,10 @@ def saveCoords(robot_id):
             nodeType = IntersectionTypes.LEFT_CORNER
         elif type == ImageIntersectionTypes.END:
             nodeType = IntersectionTypes.LEFT_END
+        elif type == ImageIntersectionTypes.LINE:
+            type = IntersectionTypes.LINE
+        else:
+            type = IntersectionTypes.ERROR
     elif direction == SOUTH:
         if type == ImageIntersectionTypes.CROSS:
             nodeType = IntersectionTypes.CROSS
@@ -396,6 +412,10 @@ def saveCoords(robot_id):
             nodeType = IntersectionTypes.REVERSE_LEFT_CORNER
         elif type == ImageIntersectionTypes.END:
             nodeType = IntersectionTypes.REVERSE_END
+        elif type == ImageIntersectionTypes.LINE:
+            type = IntersectionTypes.LINE
+        else:
+            type = IntersectionTypes.ERROR
     elif direction == WEST:
         if type == ImageIntersectionTypes.CROSS:
             nodeType = IntersectionTypes.CROSS
@@ -411,55 +431,75 @@ def saveCoords(robot_id):
             nodeType = IntersectionTypes.REVERSE_RIGHT_CORNER
         elif type == ImageIntersectionTypes.END:
             nodeType = IntersectionTypes.RIGHT_END
+        elif type == ImageIntersectionTypes.LINE:
+            type = IntersectionTypes.LINE
+        else:
+            type = IntersectionTypes.ERROR
+
+    if type == IntersectionTypes.LINE:
+        (x,y) = serverVars.currentCoords[robot_id]
+        if direction == NORTH:
+            serverVars.currentCoords[robot_id] = (x, y+1)
+        elif direction == EAST:
+            serverVars.currentCoords[robot_id] = (x+1, y)
+        elif direction == SOUTH:
+            serverVars.currentCoords[robot_id] = (x, y-1)
+        elif direction == WEST:
+            serverVars.currentCoords[robot_id] = (x-1, y)
+        
+        return {"response": RFDirectionCommands.FORWARD}
 
     # create new node
     newNode = createNode(nodex, nodey, nodeType)
 
     # attach to the last node
     if direction == NORTH:
-        if nodex == currentNode[robot_id].x and nodey > currentNode[robot_id].y:
-            currentNode[robot_id].directions[NORTH] = newNode
-            newNode.directions[SOUTH] = currentNode[robot_id]
-            currentNode[robot_id] = newNode
+        print("north")
+        if nodex == serverVars.currentNode[robot_id].x and nodey > serverVars.currentNode[robot_id].y:
+            serverVars.currentNode[robot_id].directions[NORTH] = newNode
+            newNode.directions[SOUTH] = serverVars.currentNode[robot_id]
+            serverVars.currentNode[robot_id] = newNode
 
-            print(currentNode[robot_id].x)
-            print(currentNode[robot_id].y)
-            if currentNode[robot_id].directions[SOUTH] is not None:
-                print(currentNode[robot_id].directions[SOUTH].x)
-                print(currentNode[robot_id].directions[SOUTH].y)
+            print(serverVars.currentNode[robot_id].x)
+            print(serverVars.currentNode[robot_id].y)
+            if serverVars.currentNode[robot_id].directions[SOUTH] is not None:
+                print(serverVars.currentNode[robot_id].directions[SOUTH].x)
+                print(serverVars.currentNode[robot_id].directions[SOUTH].y)
         else:
             #something went wrong didnt go NORTH
             print("error didnt go north")
     elif direction == SOUTH:
-        if nodex == currentNode[robot_id].x and nodey < currentNode[robot_id].y:
-            currentNode[robot_id].directions[SOUTH] = newNode
-            newNode.directions[NORTH] = currentNode[robot_id]
-            currentNode[robot_id] = newNode
+        print("south")
+        if nodex == serverVars.currentNode[robot_id].x and nodey < serverVars.currentNode[robot_id].y:
+            serverVars.currentNode[robot_id].directions[SOUTH] = newNode
+            newNode.directions[NORTH] = serverVars.currentNode[robot_id]
+            serverVars.currentNode[robot_id] = newNode
         else:
             #something went wrong didnt go SOUTH
             print("error didnt go south")
     elif direction == EAST:
-        print("here")
-        if nodey == currentNode[robot_id].y and nodex > currentNode[robot_id].x:
-            currentNode[robot_id].directions[EAST] = newNode
-            newNode.directions[WEST] = currentNode[robot_id]
-            currentNode[robot_id] = newNode
+        print("east")
+        if nodey == serverVars.currentNode[robot_id].y and nodex > serverVars.currentNode[robot_id].x:
+            serverVars.currentNode[robot_id].directions[EAST] = newNode
+            newNode.directions[WEST] = serverVars.currentNode[robot_id]
+            serverVars.currentNode[robot_id] = newNode
 
-            print(currentNode[robot_id].x)
-            print(currentNode[robot_id].y)
-            print(currentNode[robot_id])
+            print(serverVars.currentNode[robot_id].x)
+            print(serverVars.currentNode[robot_id].y)
+            print(serverVars.currentNode[robot_id])
         else:
             #something went wrong didnt go EAST
             print("error didnt go east")
     elif direction == WEST:
-        if nodey == currentNode[robot_id].y and nodex < currentNode[robot_id].x:
-            currentNode[robot_id].directions[WEST] = newNode
-            newNode.directions[EAST] = currentNode[robot_id]
-            currentNode[robot_id] = newNode
+        print("west")
+        if nodey == serverVars.currentNode[robot_id].y and nodex < serverVars.currentNode[robot_id].x:
+            serverVars.currentNode[robot_id].directions[WEST] = newNode
+            newNode.directions[EAST] = serverVars.currentNode[robot_id]
+            serverVars.currentNode[robot_id] = newNode
 
-            print(currentNode[robot_id].x)
-            print(currentNode[robot_id].y)
-            print(currentNode[robot_id].type)
+            print(serverVars.currentNode[robot_id].x)
+            print(serverVars.currentNode[robot_id].y)
+            print(serverVars.currentNode[robot_id].type)
         else:
             #something went wrong didnt go WEST
             print("error didnt go west")
@@ -470,19 +510,46 @@ def saveCoords(robot_id):
         dir = (3 + direction) % 4
         if newNode.directions[dir] is not None:
             retDirection = RFDirectionCommands.LEFT
-            currentDirection[robot_id] = dir
+            serverVars.currentDirection[robot_id] = dir
+            (x,y) = serverVars.currentCoords[robot_id]
+            if dir == NORTH:
+                serverVars.currentCoords[robot_id] = (x, y+1)
+            elif dir == EAST:
+                serverVars.currentCoords[robot_id] = (x+1, y)
+            elif dir == SOUTH:
+                serverVars.currentCoords[robot_id] = (x, y-1)
+            elif dir == WEST:
+                serverVars.currentCoords[robot_id] = (x-1, y)
         else:
             # try right
             dir = (1 + direction) % 4
             if newNode.directions[dir] is not None:
                 retDirection = RFDirectionCommands.RIGHT
-                currentDirection[robot_id] = dir
+                serverVars.currentDirection[robot_id] = dir
+                (x,y) = serverVars.currentCoords[robot_id]
+                if dir == NORTH:
+                    serverVars.currentCoords[robot_id] = (x, y+1)
+                elif dir == EAST:
+                    serverVars.currentCoords[robot_id] = (x+1, y)
+                elif dir == SOUTH:
+                    serverVars.currentCoords[robot_id] = (x, y-1)
+                elif dir == WEST:
+                    serverVars.currentCoords[robot_id] = (x-1, y)
             else:
                 # try forward
                 dir = direction
                 if newNode.directions[dir] is not None:
                     retDirection = RFDirectionCommands.FORWARD
-                    currentDirection[robot_id] = dir
+                    serverVars.currentDirection[robot_id] = dir
+                    (x,y) = serverVars.currentCoords[robot_id]
+                    if dir == NORTH:
+                        serverVars.currentCoords[robot_id] = (x, y+1)
+                    elif dir == EAST:
+                        serverVars.currentCoords[robot_id] = (x+1, y)
+                    elif dir == SOUTH:
+                        serverVars.currentCoords[robot_id] = (x, y-1)
+                    elif dir == WEST:
+                        serverVars.currentCoords[robot_id] = (x-1, y)
                 else:
                     # This is bad just stop for now
                     print("bad")
@@ -493,24 +560,52 @@ def saveCoords(robot_id):
         # try left
         if newNode.directions[dir] is None and newNode.type[dir] == 1:
             retDirection = RFDirectionCommands.LEFT
-            currentDirection[robot_id] = dir
+            serverVars.currentDirection[robot_id] = dir
+            (x,y) = serverVars.currentCoords[robot_id]
+            if dir == NORTH:
+                serverVars.currentCoords[robot_id] = (x, y+1)
+            elif dir == EAST:
+                serverVars.currentCoords[robot_id] = (x+1, y)
+            elif dir == SOUTH:
+                serverVars.currentCoords[robot_id] = (x, y-1)
+            elif dir == WEST:
+                serverVars.currentCoords[robot_id] = (x-1, y)
         else:
             # try right
+            print("try right")
             dir = (1 + direction) % 4
             if newNode.directions[dir] is None and newNode.type[dir] == 1:
                 retDirection = RFDirectionCommands.RIGHT
-                currentDirection[robot_id] = dir
+                serverVars.currentDirection[robot_id] = dir
+                (x,y) = serverVars.currentCoords[robot_id]
+                if dir == NORTH:
+                    serverVars.currentCoords[robot_id] = (x, y+1)
+                elif dir == EAST:
+                    serverVars.currentCoords[robot_id] = (x+1, y)
+                elif dir == SOUTH:
+                    serverVars.currentCoords[robot_id] = (x, y-1)
+                elif dir == WEST:
+                    serverVars.currentCoords[robot_id] = (x-1, y)
             else:
                 # try forward
                 dir = direction
                 if newNode.directions[dir] is None and newNode.type[dir] == 1:
                     retDirection = RFDirectionCommands.FORWARD
-                    currentDirection[robot_id] = dir
+                    serverVars.currentDirection[robot_id] = dir
+                    (x,y) = serverVars.currentCoords[robot_id]
+                    if dir == NORTH:
+                        serverVars.currentCoords[robot_id] = (x, y+1)
+                    elif dir == EAST:
+                        serverVars.currentCoords[robot_id] = (x+1, y)
+                    elif dir == SOUTH:
+                        serverVars.currentCoords[robot_id] = (x, y-1)
+                    elif dir == WEST:
+                        serverVars.currentCoords[robot_id] = (x-1, y)
                 else:
-                    # this is bad
-                    # deadend should turn 180 degrees and go backward
+                    # deadend should turn 180 degrees
                     print("deadend")
-                    retDirection = RFDirectionCommands.STOP
+                    retDirection = RFDirectionCommands.LEFT
+                    serverVars.currentDirection[robot_id] = (direction + 2) % 4
     
     # Return a direction command
     return {"response": retDirection}

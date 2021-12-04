@@ -20,13 +20,15 @@ if __name__ == '__main__':
         resp = client.startMaze()
         time.sleep(10)
     
-    time.sleep(10)
-    
+    time.sleep(5)
+
     mouseResp = rfJetson.send(resp)
 
     if mouseResp == (200,200):
         print("mouse responded")
-        
+
+
+    time.sleep(5)
 
     while True:
         typeArr = []
@@ -51,6 +53,9 @@ if __name__ == '__main__':
             time.sleep(5)
             if mouseResp == (200,200):
                 print("mouse responded")
+        
+        time.sleep(2)
+
 
 
 

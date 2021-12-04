@@ -97,7 +97,7 @@ class RFJetson:
             # print('sending {}'.format(transmit_packet))
             # send_packet(connection, transmit_packet)
             start = time.time()
-            while time.time() - start < 1.0:
+            while time.time() - start < 10.0:
                 new_packet = self.__try_receive_packet()
                 if new_packet is not None:
                     break

@@ -26,6 +26,11 @@ def startMaze():
     print(x.json()) # should be direction command
 
     if "response" in x.json():
+        try:
+            int(x.json()["response"])
+        except:
+            print(x.json())
+            print("error")
         return int(x.json()["response"])
     else:
         return None
