@@ -51,8 +51,8 @@ class IntersectionTypes:
 # Counter for naming Nodes
 counter = count(0)
 
-currentNode = {1: None, 2: None, 3: None}
-currentDirection = {1: None, 2: None, 3: None} # use NESW Constants above
+currentNode = {'1': None, '2': None, '3': None}
+currentDirection = {'1': None, '2': None, '3': None} # use NESW Constants above
 nodeDict = {}
 startNode = None
 
@@ -68,13 +68,15 @@ class Node:
         # self.verified = False
 
     def fullyExplored(self):
-        if not (self.type[NORTH] == 1 and self.directions[NORTH] is not None):
+        print(self.type)
+        print(self.directions[EAST])
+        if  self.type[NORTH] == 1 and self.directions[NORTH] is None:
             return False
-        if not (self.type[EAST] == 1 and self.directions[EAST] is not None):
+        if  self.type[EAST] == 1 and self.directions[EAST] is None:
             return False
-        if not (self.type[SOUTH] == 1 and self.directions[SOUTH] is not None):
+        if  self.type[SOUTH] == 1 and self.directions[SOUTH] is None:
             return False
-        if not (self.type[WEST] == 1 and self.directions[WEST] is not None):
+        if  self.type[WEST] == 1 and self.directions[WEST] is None:
             return False
 
         return True
@@ -103,9 +105,9 @@ def mazeFullyExplored():
 def visualizeMaze():
 
     def nodeUnicode(num):
-        retStr = ' '
+        retStr = '‌‌ ‌‌ ‌‌ ‌‌ ‌‌ '
         if num == 0:
-            retStr = ' '
+            retStr = '‌‌‌‌ ‌‌ ‌‌  ‌‌ '
         elif num == 1:
             retStr = '┼'
         elif num == 2:
@@ -202,7 +204,6 @@ def visualizeMaze():
         arr[x][y] = nodeMark(node)
 
         if node.directions[NORTH] is not None:
-            print("HERE")
             newx = node.directions[NORTH].x
             newy = node.directions[NORTH].y
 
@@ -257,9 +258,9 @@ def visualizeMaze():
             line += nodeUnicode(arr[x][y])
 
         if y < 10:
-            line = str(y + 1)+ '  ' + line + '<br>'
+            line = line + '<br>'
         else:
-            line = str(y + 1)+ ' ' + line + '<br>'
+            line = line + '<br>'
 
         retStr = retStr + line
 
@@ -415,33 +416,53 @@ def saveCoords(robot_id):
     newNode = createNode(nodex, nodey, nodeType)
 
     # attach to the last node
-    # check if on same x axis
-    if nodex == currentNode[robot_id].x:
-        if nodey > currentNode[robot_id].y:
+    if direction == NORTH:
+        if nodex == currentNode[robot_id].x and nodey > currentNode[robot_id].y:
             currentNode[robot_id].directions[NORTH] = newNode
             newNode.directions[SOUTH] = currentNode[robot_id]
             currentNode[robot_id] = newNode
-        elif nodey < currentNode[robot_id].y:
+
+            print(currentNode[robot_id].x)
+            print(currentNode[robot_id].y)
+            if currentNode[robot_id].directions[SOUTH] is not None:
+                print(currentNode[robot_id].directions[SOUTH].x)
+                print(currentNode[robot_id].directions[SOUTH].y)
+        else:
+            #something went wrong didnt go NORTH
+            print("error didnt go north")
+    elif direction == SOUTH:
+        if nodex == currentNode[robot_id].x and nodey < currentNode[robot_id].y:
             currentNode[robot_id].directions[SOUTH] = newNode
             newNode.directions[NORTH] = currentNode[robot_id]
             currentNode[robot_id] = newNode
         else:
-            # error
-            print("error")
-    elif nodey == currentNode[robot_id].y:
-        if nodex > currentNode[robot_id].x:
+            #something went wrong didnt go SOUTH
+            print("error didnt go south")
+    elif direction == EAST:
+        print("here")
+        if nodey == currentNode[robot_id].y and nodex > currentNode[robot_id].x:
             currentNode[robot_id].directions[EAST] = newNode
             newNode.directions[WEST] = currentNode[robot_id]
             currentNode[robot_id] = newNode
-        elif nodex < currentNode[robot_id].x:
+
+            print(currentNode[robot_id].x)
+            print(currentNode[robot_id].y)
+            print(currentNode[robot_id])
+        else:
+            #something went wrong didnt go EAST
+            print("error didnt go east")
+    elif direction == WEST:
+        if nodey == currentNode[robot_id].y and nodex < currentNode[robot_id].x:
             currentNode[robot_id].directions[WEST] = newNode
             newNode.directions[EAST] = currentNode[robot_id]
             currentNode[robot_id] = newNode
+
+            print(currentNode[robot_id].x)
+            print(currentNode[robot_id].y)
+            print(currentNode[robot_id].type)
         else:
-            # error
-            print("error")
-    else:
-        print("error did not go straight")
+            #something went wrong didnt go WEST
+            print("error didnt go west")
 
     # Decision making here
     if newNode.fullyExplored():
@@ -464,6 +485,7 @@ def saveCoords(robot_id):
                     currentDirection[robot_id] = dir
                 else:
                     # This is bad just stop for now
+                    print("bad")
                     retDirection = RFDirectionCommands.STOP
     else:
         dir = (3 + direction) % 4
