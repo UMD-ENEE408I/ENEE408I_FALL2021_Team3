@@ -27,7 +27,7 @@ int adc1_buf[8];
 int adc2_buf[8];
 bool arr[16];
 
-const unsigned int BUF_THRESHOLD = 600; //for G: 560, for C: 600, for D: 710
+const unsigned int BUF_THRESHOLD = 710; //for G: 560, for C: 600, for D: 710
 //float distTune = 135/145; //for G: , for C: 135/145, for D: 15/16
 int command_int = 0; //for testing, REMOVE IN FINAL CODE
 
@@ -336,8 +336,8 @@ void command_forward(double dist){ //move forward by specified distance (in m)
   prevReadM2 = -1*enc2.read();
   targetReadM1 = prevReadM1;
   targetReadM2 = prevReadM2;
-  float targetFinalReadM1 = dist/(0.032*M_PI)*360*30/33+prevReadM1; //multiply by G: 30/33, C and D: 15/16 to adjust for miscalculation
-  float targetFinalReadM2 = dist/(0.032*M_PI)*360*30/33+prevReadM2; //multiply by G: 30/33, C and D: 15/16 to adjust for miscalculation
+  float targetFinalReadM1 = dist/(0.032*M_PI)*360*15/16+prevReadM1; //multiply by G: 30/33, C and D: 15/16 to adjust for miscalculation
+  float targetFinalReadM2 = dist/(0.032*M_PI)*360*15/16+prevReadM2; //multiply by G: 30/33, C and D: 15/16 to adjust for miscalculation
   prevTime = micros();
   while (!completedForward){  //PID loop
     long curTime = micros(); //time since Arduino started in microseconds
