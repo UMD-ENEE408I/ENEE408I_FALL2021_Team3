@@ -1,3 +1,4 @@
+//GILLIAN'S MOUSE
 
 // This program receives packet from the mouse
 // sends it via serial to the Jetson's python program
@@ -6,9 +7,10 @@
 
 #include <SPI.h>
 #include "RF24.h"
+#include "main_move.h"
 
-const unsigned int ADC_1_CS = A3;
-const unsigned int ADC_2_CS = A2;
+//const unsigned int ADC_1_CS = A3;
+//const unsigned int ADC_2_CS = A2;
 
 RF24 radio(0, A4, 1000000); // D0 = CE, A4 = CSN, spi_speed = 1MHz (default 10 Mhz is too fast)
 // Use 1 Mhz, 10 MHz is too fast (based on oscilloscope)
@@ -49,7 +51,18 @@ void loop() {
     Serial.print(receive_packet.command);
     Serial.print(" ");
     Serial.println(receive_packet.distance);
+    Serial.println(receive_packet.command == 1);
 
+    if (receive_packet.command == 0){
+      stop_move();
+    }else if (receive_packet.command == 1){
+      command_forward(0.15);
+    }else if (receive_packet.command == 2){
+      command_left_pid();
+    }else if (receive_packet.command == 3){
+      command_right_pid();
+    }
+    
     send_packet.command = 200;
     send_packet.distance = 200;
     
