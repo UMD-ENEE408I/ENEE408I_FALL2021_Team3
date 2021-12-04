@@ -27,7 +27,8 @@ int adc1_buf[8];
 int adc2_buf[8];
 bool arr[16];
 
-const unsigned int BUF_THRESHOLD = 710; //for G: 560, for C: 600, for D: 710
+const unsigned int BUF_THRESHOLD = 600; //for G: 560, for C: 600, for D: 710
+//float distTune = 135/145; //for G: , for C: 135/145, for D: 15/16
 int command_int = 0; //for testing, REMOVE IN FINAL CODE
 
 //PID vars
@@ -97,117 +98,8 @@ void stop_move() {
   M2_stop();
 }
 
-void readBar(){
-  int t_start = micros();
-  for (int i = 0; i < 8; i++) {
-    adc1_buf[i] = adc1.readADC(i);
-    adc2_buf[i] = adc2.readADC(i);
-  }
-  int t_end = micros();
-  int count = 0;
-  for (int i = 0; i < 8; i++) {
-    if (adc1_buf[i] < BUF_THRESHOLD) {
-      arr[count] = true;
-      //Serial.print("AH"); Serial.print("\t");
-    } else {
-      arr[count] = false;
-      //Serial.print("--"); Serial.print("\t");
-    }
 
-    count = count + 1;
-
-    if (adc2_buf[i] < BUF_THRESHOLD) {
-      arr[count] = true;
-      //Serial.print("AH"); Serial.print("\t");
-    } else {
-      arr[count] = false;
-      //Serial.print("--"); Serial.print("\t");
-    }
-
-    count = count + 1;
-  }
-}
-
-//make a left turn on command
-void command_left() {
-  int PWM_L = 35; //ADJUST THIS
-  int PWM_R = 35; //ADJUST THIS
-  //turn_left(leftPWM);
-  //delay(10000);
-  //turn left code
-  long ogComTime = micros(); //time at which original turn command was given
-  int completedTurnL = 0; //flag
-  int completedTurnR = 0; //flag
-  while (!completedTurnL){
-    //Serial.println("turning left");
-    turn_left(PWM_L);
-    completedTurnR = 0; //reset flag
-    delay(10);
-    //Serial.println("stop move");
-    stop_move();
-    //Serial.println("reading bar");
-    readBar();
-    long checkBarTime = micros(); //time at which IR sensors were checked
-    if (arr[5] == true && (checkBarTime - ogComTime > 500000)){  //if turn has executed for >0.7s, check if centered on straight path to ensure it's past any forward paths
-      completedTurnL = 1;
-      //Serial.println("centered");
-    }/*else if (arr[5] == true || arr[4] == true || arr[3] == true || arr[2] == true || arr[1] == true || arr[0] == true){ //turned too far to the left, need to turn right
-      while (!completedTurnR){
-        Serial.println("turning right");
-        turn_right(rightPWM);
-        delay(10);
-        Serial.println("stop move (right)");
-        stop_move();
-        Serial.println("reading bar (right)");
-        readBar();
-        if (arr[6] == true){  //centered on straight path
-          Serial.println("centered (right)");
-          completedTurnR = 1; //raise flag
-          completedTurnL = 1; //raise flag
-        } else if (arr[7] == true || arr[8] == true || arr[9] == true || arr[10] == true || arr[11] == true || arr[12] == true){ //turned far to the right, need to let left
-          Serial.println("too far right");
-          completedTurnR = 1; //raise flag
-        } 
-      }
-    }*/
-  }
-  //Serial.println("done turning left");
-  stop_move();
-  //delay(1000);
-}
-
-void command_right(){
-  targetVel = 0.1;
-  int PWM_R = 38; //ADJUST THIS
-  //int PWM_L = 35; //ADJUST THIS
-  //turn_right(PWM_R);
-  
-  //right turn code
-  long ogComTime = micros(); //time at which original turn command was given
-  int passedIR8 = 0; //flag
-  int completedTurnR = 0; //flag
-  while (!completedTurnR){
-    //Serial.println("turning right");
-    turn_right(PWM_R);
-    delay(10);
-    //Serial.println("stop move");
-    stop_move();
-    //Serial.println("reading bar");
-    readBar();
-    long checkBarTime = micros(); //time at which IR sensors were checked
-    if (arr[7] == true && passedIR8 == 0){
-      passedIR8 = 1;
-    } else if (arr[7] == true && (checkBarTime - ogComTime > 200000)){  //if turn has executed for >0.5s, check if centered on straight path to ensure it's past any forward paths
-      completedTurnR = 1;
-      //Serial.println("centered");
-    }
-  }
-  //Serial.println("done turning right");
-  stop_move();
-  //delay(1000);
-}
-
-void command_right_pwm(){
+void command_right_pid(){
   targetVel = 0.1;
   int passedIR8 = 0; //flag
   int completedTurnR = 0; //flag
@@ -323,7 +215,7 @@ void command_right_pwm(){
   stop_move();
 }
 
-void command_left_pwm(){
+void command_left_pid(){
   targetVel = 0.1;
   int passedIR5 = 0; //flag
   int completedTurnL = 0; //flag
@@ -444,8 +336,8 @@ void command_forward(double dist){ //move forward by specified distance (in m)
   prevReadM2 = -1*enc2.read();
   targetReadM1 = prevReadM1;
   targetReadM2 = prevReadM2;
-  float targetFinalReadM1 = dist/(0.032*M_PI)*360+prevReadM1;
-  float targetFinalReadM2 = dist/(0.032*M_PI)*360+prevReadM2;
+  float targetFinalReadM1 = dist/(0.032*M_PI)*360*30/33+prevReadM1; //multiply by G: 30/33, C and D: 15/16 to adjust for miscalculation
+  float targetFinalReadM2 = dist/(0.032*M_PI)*360*30/33+prevReadM2; //multiply by G: 30/33, C and D: 15/16 to adjust for miscalculation
   prevTime = micros();
   while (!completedForward){  //PID loop
     long curTime = micros(); //time since Arduino started in microseconds
@@ -534,7 +426,7 @@ void command_forward(double dist){ //move forward by specified distance (in m)
     }
     //Serial.println();
   
-    stopFlag = 0; //reset flag before checking light bar
+    //stopFlag = 0; //reset flag before checking light bar
     if (arr[5] == true || arr[4] == true || arr[3] == true || arr[2] == true || arr[1] == true || arr[0] == true){ //too far to the right --> turn left
       M1_PWM += 10;
       M2_PWM -= 10;
@@ -553,12 +445,19 @@ void command_forward(double dist){ //move forward by specified distance (in m)
     delay(10);
     curReadM1 = enc1.read();
     curReadM2 = -1*enc2.read();
-    if (curReadM1 > targetFinalReadM1 || curReadM2 > targetFinalReadM2)
+    if (curReadM1 >= targetFinalReadM1 || curReadM2 >= targetFinalReadM2)
       completedForward = 1;
     //commandCurTime = micros();
     //Serial.println(commandCurTime - commandStartTime);
+    Serial.print(curReadM1);
+    Serial.print("\t");
+    Serial.print(targetFinalReadM1);
+    Serial.print("\t\t");
+    Serial.print(curReadM2);
+    Serial.print("\t");
+    Serial.print(targetFinalReadM2);
+    Serial.println();
   }
-
   stop_move();
 }
 
@@ -617,6 +516,6 @@ void loop() {
   delay(10);
   */
   //command_left();
-  delay(6000);
+  delay(1000);
   command_forward(0.15);
 }
