@@ -24,6 +24,7 @@ def intersect(vid):
     newmtx = np.load("./Calibration/camera2_params/newmtx.npy")
 
     type = -1
+    center_dist = -1
 
     if vid.isOpened():
         for i in range(0,3):
@@ -35,9 +36,9 @@ def intersect(vid):
 
         # Cam 2
         c = 0.3
-        c_add = 20
+        c_add = 0
         c_h = 50
-        c_v = 165
+        c_v = 150
 
         # # Cam 3
         # c = 0.3
@@ -248,7 +249,8 @@ def intersect(vid):
 
                 print("centerX = ", centerX, "\txDim = ", len(img[0]))
                 print("centerY = ", centerY, "\tyDim = ", len(img))
-                center_dist = 18*math.pow(1.1,-0.1*centerY) + 5
+                # center_dist = 18*math.pow(1.1,-0.1*centerY) + 5           # distance eq for cam 3, mouse G
+                center_dist = 16*math.pow(1.07,-0.1*centerY) + 4            # distance eq for cam 2, mouse C
                 print("distance to intersection: ", center_dist)
                 cv2.circle(img,(centerX,centerY),radius=1,color=(0,255,0),thickness=2)
                 cv2.imwrite('samplePoints.jpg', img)
@@ -354,7 +356,7 @@ def intersect(vid):
             else:
                 print("No path detected")
 
-    return [type, int(distance)]
+    return [type, int(center_dist)]
 
 v = initialize()
 print("start 1")
