@@ -33,11 +33,20 @@ def intersect(vid):
         cv2.imwrite('og_img.jpg', og_img)
 
 
-        c = 0.55                                                     # crop factor
+        # Cam 2
+        c = 0.3
+        c_add = 20
         c_h = 50
+        c_v = 165
+
+        # # Cam 3
+        # c = 0.3
+        # c_add = 20
+        # c_h = 50
+        # c_v = 165
         # og_img_cp = og_img.copy()
 
-        img = og_img[int(len(og_img)*c):len(og_img)-40, c_h:len(og_img[0])-c_h]      # crop image
+        img = og_img[int(len(og_img)*c + c_add):len(og_img)-c_v, c_h:len(og_img[0])-c_h]      # crop image
         print("og_img dimensions: xLen = ", len(og_img[0]), "\tyLen = ", len(og_img))
         gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)                 # convert cropped image to grayscale
         og_gray = cv2.cvtColor(og_img,cv2.COLOR_BGR2GRAY)
@@ -239,9 +248,11 @@ def intersect(vid):
 
                 print("centerX = ", centerX, "\txDim = ", len(img[0]))
                 print("centerY = ", centerY, "\tyDim = ", len(img))
+                center_dist = 18*math.pow(1.1,-0.1*centerY) + 5
+                print("distance to intersection: ", center_dist)
                 cv2.circle(img,(centerX,centerY),radius=1,color=(0,255,0),thickness=2)
                 cv2.imwrite('samplePoints.jpg', img)
-                cv2.circle(og_img,(centerX + c_h,centerY + int(len(og_img)*c)),radius=1,color=(0,255,0),thickness=2)
+                cv2.circle(og_img,(centerX + c_h,centerY + int(len(og_img)*c + c_add)),radius=1,color=(0,255,0),thickness=2)
 
 
                 left = 0
@@ -252,53 +263,55 @@ def intersect(vid):
                 # Check left of center
                 centerL = centerX - 70
                 cv2.circle(og_img,(centerL + c_h,centerY + int(len(og_img)*c)),radius=1,color=(0,0,255),thickness=2)
-                if og_gray[centerY + int(len(og_img)*c)][centerL + c_h] > 200 :
+                if og_gray[centerY + int(len(og_img)*c) + c_add][centerL + c_h] > 200 :
                     left = 1
                 # cv2.imwrite('og_samplePoints.jpg',og_img)
 
                 # Check right of center
                 centerR = centerX + 70
                 cv2.circle(og_img,(centerR + c_h,centerY + int(len(og_img)*c)),radius=1,color=(0,0,100),thickness=2)
-                if og_gray[centerY + int(len(og_img)*c)][centerR + c_h] > 200 :
+                if og_gray[centerY + int(len(og_img)*c) + c_add][centerR + c_h] > 200 :
                     right = 1
                 # cv2.imwrite('og_samplePoints.jpg',og_img)
 
                 # Check 20mm above center
-                deltaU = int(math.log(1/60 + math.pow(2.8,-0.02*centerY),2.8)/-0.02)        # calculate pixel difference
-                if deltaU == 0 :
-                    deltaU = 15
-                print("deltaU = ", deltaU)
+                # deltaU = int(math.log(1/60 + math.pow(2.8,-0.02*centerY),2.8)/-0.02)       # calculate pixel difference
+                # if deltaU == 0 :
+                #     deltaU = 15
+                # print("deltaU = ", deltaU)
+                deltaU = 30
                 centerU = centerY - deltaU
                 if centerU < 0:
                     centerU = 0
                 cv2.circle(og_img,(centerX + c_h,centerU + int(len(og_img)*c)),radius=1,color=(0,0,255),thickness=2)
-                if og_gray[centerU + int(len(og_img)*c)][centerX + c_h] > 200 :
+                if og_gray[centerU + int(len(og_img)*c) + c_add][centerX + c_h] > 200 :
                     up = 1
                 # cv2.imwrite('og_samplePoints.jpg',og_img)
 
                 # Check 20mm below center
-                deltaD = int(math.log(math.pow(2.8,-0.02*centerY) - 1/60,2.8)/-0.02)        # calculate pixel difference
-                if deltaD == 0 :
-                    deltaD = 15
-                print("deltaD = ", deltaD)
+                # deltaD = int(math.log(math.pow(2.8,-0.02*centerY) - 1/60,2.8)/-0.02)        # calculate pixel difference
+                # if deltaD == 0 :
+                #     deltaD = 15
+                # print("deltaD = ", deltaD)
+                deltaD = 50
                 centerD = centerY + deltaD
                 if centerD >= len(img):
                     centerD = len(img) - 1
                 print("centerX + c_h: ", centerX + c_h, "\tcenterD+adj: ", centerD + int(len(og_img)*c))
                 cv2.circle(og_img,(centerX + c_h,centerD + int(len(og_img)*c)),radius=1,color=(255,255,0),thickness=2)
-                if og_gray[centerD + int(len(og_img)*c)][centerX + c_h] > 200 :
+                if og_gray[centerD + int(len(og_img)*c) + c_add][centerX + c_h] > 200 :
                     down = 1
 
                 print("samplePoints:")
-                print("center: ", og_gray[centerY + int(len(og_img)*c)][centerX + c_h] > 200)
-                print("up: ", og_gray[centerU + int(len(og_img)*c)][centerX + c_h] > 200)
-                print("down: ", og_gray[centerD + int(len(og_img)*c)][centerX + c_h] > 200)
-                print("left: ", og_gray[centerY + int(len(og_img)*c)][centerL + c_h] > 200)
-                print("right: ", og_gray[centerY + int(len(og_img)*c)][centerR + c_h] > 200)
-                print("up left: ", og_gray[centerU + int(len(og_img)*c)][centerL + c_h] > 200)
-                print("up right: ", og_gray[centerU + int(len(og_img)*c)][centerR + c_h] > 200)
-                print("down left: ", og_gray[centerD + int(len(og_img)*c)][centerL + c_h] > 200)
-                print("down right: ", og_gray[centerD + int(len(og_img)*c)][centerR + c_h] > 200)
+                print("center: ", og_gray[centerY + int(len(og_img)*c) + c_add][centerX + c_h] > 200)
+                print("up: ", og_gray[centerU + int(len(og_img)*c) + c_add][centerX + c_h] > 200)
+                print("down: ", og_gray[centerD + int(len(og_img)*c) + c_add][centerX + c_h] > 200)
+                print("left: ", og_gray[centerY + int(len(og_img)*c) + c_add][centerL + c_h] > 200)
+                print("right: ", og_gray[centerY + int(len(og_img)*c) + c_add][centerR + c_h] > 200)
+                print("up left: ", og_gray[centerU + int(len(og_img)*c) + c_add][centerL + c_h] > 200)
+                print("up right: ", og_gray[centerU + int(len(og_img)*c) + c_add][centerR + c_h] > 200)
+                print("down left: ", og_gray[centerD + int(len(og_img)*c) + c_add][centerL + c_h] > 200)
+                print("down right: ", og_gray[centerD + int(len(og_img)*c) + c_add][centerR + c_h] > 200)
 
                 # cv2.imwrite('samplePoints.jpg',img)
                 cv2.imwrite('og_samplePoints.jpg',og_img)
@@ -341,14 +354,12 @@ def intersect(vid):
             else:
                 print("No path detected")
 
-    cv2.imshow('og_img', og_img)
-    cv2.waitKey(1)
-    return type
+    return [type, int(distance)]
 
 v = initialize()
 print("start 1")
-t = intersect(v)
-print("\n\ntype1 = ", t)
+arr = intersect(v)
+print("\n\ntype1 = ", arr[0], " at ", arr[1], " cm")
 print("start 2")
 t = intersect(v)
 print("\n\ntype2 = ", t)
