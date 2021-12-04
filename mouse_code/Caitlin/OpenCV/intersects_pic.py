@@ -33,19 +33,23 @@ def intersect(vid):
         og_img = cv2.undistort(img, mtx, dist, None, newmtx)
         cv2.imwrite('og_img.jpg', og_img)
 
+        # # Cam 1
+        # c = 0.2
+        # c_add = 0
+        # c_h = 20
+        # c_v = 50
 
-        # Cam 2
-        c = 0.3
-        c_add = 0
-        c_h = 50
-        c_v = 150
-
-        # # Cam 3
+        # # Cam 2
         # c = 0.3
-        # c_add = 20
+        # c_add = 0
         # c_h = 50
-        # c_v = 165
-        # og_img_cp = og_img.copy()
+        # c_v = 150
+
+        # Cam 3
+        c = 0.1
+        c_add = 0
+        c_h = 20
+        c_v = 40
 
         img = og_img[int(len(og_img)*c + c_add):len(og_img)-c_v, c_h:len(og_img[0])-c_h]      # crop image
         print("og_img dimensions: xLen = ", len(og_img[0]), "\tyLen = ", len(og_img))
@@ -249,8 +253,9 @@ def intersect(vid):
 
                 print("centerX = ", centerX, "\txDim = ", len(img[0]))
                 print("centerY = ", centerY, "\tyDim = ", len(img))
-                # center_dist = 18*math.pow(1.1,-0.1*centerY) + 5           # distance eq for cam 3, mouse G
-                center_dist = 16*math.pow(1.07,-0.1*centerY) + 4            # distance eq for cam 2, mouse C
+                # center_dist = 16*math.pow(1.05,-0.12*centerY) + 5           # distance eq for cam 1, mouse C
+                center_dist = 13*math.pow(1.05,-0.1*centerY) + 7           # distance eq for cam 3, mouse D
+                # center_dist = 16*math.pow(1.07,-0.1*centerY) + 4            # distance eq for cam 2, mouse G
                 print("distance to intersection: ", center_dist)
                 cv2.circle(img,(centerX,centerY),radius=1,color=(0,255,0),thickness=2)
                 cv2.imwrite('samplePoints.jpg', img)
@@ -281,7 +286,7 @@ def intersect(vid):
                 # if deltaU == 0 :
                 #     deltaU = 15
                 # print("deltaU = ", deltaU)
-                deltaU = 30
+                deltaU = 70
                 centerU = centerY - deltaU
                 if centerU < 0:
                     centerU = 0
@@ -295,7 +300,7 @@ def intersect(vid):
                 # if deltaD == 0 :
                 #     deltaD = 15
                 # print("deltaD = ", deltaD)
-                deltaD = 50
+                deltaD = 80
                 centerD = centerY + deltaD
                 if centerD >= len(img):
                     centerD = len(img) - 1
