@@ -41,20 +41,22 @@ def try_receive_packet(connection):
     
     possible_header = connection.read(size=1)
     possible_header_unpacked = struct.unpack('B', possible_header)
-    # print(possible_header_unpacked[0], 0x8B)
+    print(possible_header_unpacked[0], 0x8B)
     if possible_header_unpacked[0] == 0x8B:
-        # print("check1")
+        print("check1")
         next_header = connection.read(size=1)
         possible_header_unpacked2 = struct.unpack('B', next_header)
         if possible_header_unpacked2[0] == 0xEA:
-            # print("check2")
+            print("check2")
             next_header2 = connection.read(size=1)
             possible_header_unpacked3 = struct.unpack('B', next_header2)
             print(possible_header_unpacked3)
             if possible_header_unpacked3[0] == 0x27:
-                # print("here")
+                print("here")
                 packet = connection.read(size=packet_size)
+                print(packet)
                 packet_unpacked = struct.unpack(packet_format_str, packet)
+                print(packet_unpacked)
                 return packet_unpacked
     
     return None
@@ -69,42 +71,56 @@ def send_packet(connection, packet):
         else:
             break
 
+def send(connection, command):
+
+    transmit_packet = [command, 2]
+
+    print('sending {}'.format(transmit_packet))
+    send_packet(connection, transmit_packet)
+    
+    new_packet = try_receive_packet(connection)
+    while new_packet is None:
+        # print('sending {}'.format(transmit_packet))
+        # send_packet(connection, transmit_packet)
+        start = time.time()
+        while time.time() - start < 1.0:
+            new_packet = try_receive_packet(connection)
+            if new_packet is not None:
+                break
+            time.sleep(0.01)
+
+        if new_packet is None:
+            send_packet(connection, transmit_packet)
+            print('sent again')
+        print('new packet', new_packet)
+
+    print("received {}".format(new_packet))
+
+    return new_packet
+
+
+def setupRF(connection):
+    resp = None
+    
+    while (200,200) != resp:
+        resp = send(connection, 0)
+        time.sleep(3)
+
 if __name__ == '__main__':
     connection = serial.Serial(port='/dev/cu.usbserial-1440', baudrate=115200)
 
-    transmit_packet = [1, 2]
+    setupRF(connection)
 
-    while True:
-        print('sending {}'.format(transmit_packet))
-        send_packet(connection, transmit_packet)
-        
-        new_packet = try_receive_packet(connection)
-        while new_packet is None:
-            # print('sending {}'.format(transmit_packet))
-            # send_packet(connection, transmit_packet)
+    time.sleep(3)
 
-            new_packet = try_receive_packet(connection)
+    send(connection, 1)
 
-            time.sleep(0.001)
+    time.sleep(3)
 
-        print("received {}".format(new_packet))
-
-        time.sleep(1)
-
+    send(connection, 2)
     
-        
 
 
-    while True:
-        new_packet = try_receive_packet(connection)
-        if new_packet is not None:
-            # Got a packet, lets print it!
-            print('Received: {}'.format(new_packet))
 
-            # Try to send something back
-            transmit_packet[0] += 1
-            #transmit_packet[1] += 1
-            print('Sending: {}'.format(transmit_packet))
-            send_packet(connection, transmit_packet)                
-        else:
-            time.sleep(0.01)
+
+

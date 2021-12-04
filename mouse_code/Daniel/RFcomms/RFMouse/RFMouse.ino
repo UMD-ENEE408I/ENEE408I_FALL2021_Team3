@@ -41,13 +41,25 @@ void setup() {
   Serial.begin(115200);
   while (!Serial); // Wait for serial over USB
   setup_radio();
+
+  Serial.begin(115200);
+  adc1.begin(ADC_1_CS);  
+  adc2.begin(ADC_2_CS);  
+
+  pinMode(M1_IN1, OUTPUT);
+  pinMode(M1_IN2, OUTPUT);
+  pinMode(M2_IN1, OUTPUT);
+  pinMode(M2_IN2, OUTPUT);
+
+  Serial.println("HIII");
 }
 
 void loop() {
   // Try to receive a packet
   if (radio.available()) {
     radio.read(&receive_packet, sizeof(packet_t));
-    
+
+    Serial.print("Command: ");
     Serial.print(receive_packet.command);
     Serial.print(" ");
     Serial.println(receive_packet.distance);

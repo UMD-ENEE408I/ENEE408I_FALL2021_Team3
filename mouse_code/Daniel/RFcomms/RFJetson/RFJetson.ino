@@ -35,30 +35,34 @@ void loop() {
   // In the default configuration this could delay 33ms if it fails
   // However when it works it takes 1-3ms
   radio.stopListening();
-  Serial.readBytes((uint8_t*)&send_packet, sizeof(packet_t));
-  unsigned long start = millis();
-  bool success = radio.write(&send_packet, sizeof(packet_t));
-  unsigned long end = millis();
-  
-  if (success) {
-    unsigned long end = millis();
-    Serial.print("send succeeded took: ");
-    Serial.print(end-start);
-    Serial.println(" millis");
+  int num_read = Serial.readBytes((uint8_t*)&send_packet, sizeof(packet_t));
+  if (num_read > 0) {
+      unsigned long start = millis();
+      bool success = radio.write(&send_packet, sizeof(packet_t));
+      unsigned long end = millis();
+      
+      if (success) {
+        unsigned long end = millis();
+        Serial.print("send succeeded took: ");
+        Serial.print(end-start);
+        Serial.println(" millis");
+      } else {
+        unsigned long end = millis();
+        Serial.print("send failed took: ");
+        Serial.print(end-start);
+        Serial.println(" millis");
+      }
+    
+      // Try to receive a packet (the Jetson should send a response)
+      radio.startListening();
+      start = millis();
+      success = receivePacket(&receive_packet); // This will wait 10 milliseconds (can change)
+      end = millis();
+      Serial.write(magic_serial_header, sizeof(magic_serial_header));
+      Serial.write((uint8_t*)&receive_packet, sizeof(packet_t));
   } else {
-    unsigned long end = millis();
-    Serial.print("send failed took: ");
-    Serial.print(end-start);
-    Serial.println(" millis");
+    Serial.println("Nothing");
   }
-
-  // Try to receive a packet (the Jetson should send a response)
-  radio.startListening();
-  start = millis();
-  success = receivePacket(&receive_packet); // This will wait 10 milliseconds (can change)
-  end = millis();
-  Serial.write(magic_serial_header, sizeof(magic_serial_header));
-  Serial.write((uint8_t*)&receive_packet, sizeof(packet_t));
 //  if (success) {
 //    Serial.print("Received: ");
 //    Serial.print(receive_packet.command);
@@ -101,7 +105,7 @@ void setup_radio() {
 
 bool receivePacket(packet_t* packet_p) {
   unsigned long start = micros();
-  unsigned long timeout_micros = 10000;
+  unsigned long timeout_micros = 1000000;
 
   // Wait for packet until timeout
   while(!radio.available()) {
