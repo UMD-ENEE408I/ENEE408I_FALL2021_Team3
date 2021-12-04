@@ -1,6 +1,8 @@
 
-// This program sends a packet to the Jetson
-// and waits for a response from the Jetson
+// This program receives packet from the mouse
+// sends it via serial to the Jetson's python program
+// waits for the Jetson's python program to send a response
+// sends the response back to the mouse
 
 #include <SPI.h>
 #include "RF24.h"
@@ -11,22 +13,21 @@ const unsigned int ADC_2_CS = A2;
 RF24 radio(0, A4, 1000000); // D0 = CE, A4 = CSN, spi_speed = 1MHz (default 10 Mhz is too fast)
 // Use 1 Mhz, 10 MHz is too fast (based on oscilloscope)
 
+
 uint8_t mouse_address[] = "mouseN";
 uint8_t jetson_address[] = "jetNN";
-uint8_t channel = 99; // (0-127) each team should use a different channel(s)
+uint8_t channel = 42; // (0-127) each team should use a different channel(s)
 
 // Max possible size is 32 bytes (this packet is 32 bytes)
 typedef struct packet {
-//  float a_float;
-//  int32_t a_signed_int;
-//  uint8_t a_two_d_array[3][8];
-  byte movementCommand; // 0 stop, 1 forward, 2 left, 3 right
-  int distance;
-  byte response;
+  int32_t command;
+  int32_t distance;
 } packet_t;
 
-packet_t send_packet = {0, 0, 0};
-packet_t receive_packet = {0, 0, 0};
+uint8_t magic_serial_header[3] = {0x8B, 0xEA, 0x27};
+
+packet_t send_packet = {0, 0};
+packet_t receive_packet;
 
 void setup() {
   pinMode(ADC_1_CS, OUTPUT);
@@ -37,9 +38,7 @@ void setup() {
 
   Serial.begin(115200);
   while (!Serial); // Wait for serial over USB
-  
   setup_radio();
-
 }
 
 void loop() {
@@ -47,29 +46,12 @@ void loop() {
   if (radio.available()) {
     radio.read(&receive_packet, sizeof(packet_t));
     
-    if(receive_packet.movementCommand == 0){
-      Serial.println("stop movement");
-    } else if (receive_packet.movementCommand == 1){
-      Serial.println("move forward");
-    } else if (receive_packet.movementCommand == 2){
-      Serial.println("move left");
-      // save time for distance calc
-    } else if (receive_packet.movementCommand == 3){
-      Serial.println("move right");
-      // save time for distance calc
-    } else {
-      // error
-      Serial.println("error unknown movement command");
-    }
+    Serial.print(receive_packet.command);
+    Serial.print(" ");
+    Serial.println(receive_packet.distance);
 
-    // Send received packet to python script
-    // Serial.write(magic_serial_header, sizeof(magic_serial_header));
-    // Serial.write((uint8_t*)&receive_packet, sizeof(packet_t));
-
-    // // Python script is supposed to send a packet back immediately
-    // Serial.readBytes((uint8_t*)&send_packet, sizeof(packet_t));
-
-    send_packet.response = 4;
+    send_packet.command = 200;
+    send_packet.distance = 200;
     
     radio.stopListening();
   
@@ -78,23 +60,20 @@ void loop() {
     unsigned long start = millis();
     if (radio.write(&send_packet, sizeof(packet_t))) {
       unsigned long end = millis();
-      Serial.print("reply succeeded took: ");
-      Serial.print(end-start);
-      Serial.println(" millis");
+      //Serial.print("reply succeeded took: ");
+      //Serial.print(end-start);
+      //Serial.println(" millis");
     } else {
       unsigned long end = millis();
-      Serial.print("reply failed took: ");
-      Serial.print(end-start);
-      Serial.println(" millis");
+      //Serial.print("reply failed took: ");
+      //Serial.print(end-start);
+      //Serial.println(" millis");
     }
 
     // Switch back to RX before entering the main loop
     radio.startListening();
-  } else {
-    Serial.println("listening");
   }
 }
-
 #define MAX_PACKET_SIZE 32 // maximum packet size for radio
 void setup_radio() {
   if (sizeof(packet_t) > MAX_PACKET_SIZE) {
@@ -120,24 +99,7 @@ void setup_radio() {
   radio.setPayloadSize(sizeof(packet_t));
   radio.openWritingPipe(mouse_address);      // TX always uses pipe 0
   radio.openReadingPipe(1, jetson_address);  // set RX to use pipe 1
-  radio.stopListening();                     // put radio in TX mode
+  radio.startListening();                     // put radio in TX mode
 
   Serial.println("Radio hardware initialized");
-}
-
-bool receivePacket(packet_t* packet_p) {
-  unsigned long start = micros();
-  unsigned long timeout_micros = 10000;
-
-  // Wait for packet until timeout
-  while(!radio.available()) {
-    if (micros() - start > timeout_micros) {
-      return false;
-    }
-  }
-
-  // Success, radio has data available
-  radio.read(packet_p, sizeof(packet_t));
-
-  return true;
 }

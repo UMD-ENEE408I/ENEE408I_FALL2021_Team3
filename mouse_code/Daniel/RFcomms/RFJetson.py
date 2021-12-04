@@ -23,13 +23,13 @@ import serial
 
 # byte is the same as unsigned char
 # packet_format_str = 'fi' + 3*8*'B'
-packet_format_str = 'BiB'
+packet_format_str = 'ii'
 packet_size = struct.calcsize(packet_format_str)
 
 # The magic header helps with aligining the serial streams
 # (e.g. you don't want to begin reading bytes in the middle of a transmission)
-magic_header = [0x8B, 0xEA, 0x27, 0x55]
-magic_header_format_str = 'BBBB'
+magic_header = [0x8B, 0xEA, 0x27]
+magic_header_format_str = 'BBB'
 def check_header(possible_header):
     for x, y in zip(possible_header, magic_header):
         if x != y:
@@ -37,13 +37,26 @@ def check_header(possible_header):
     return True
 
 def try_receive_packet(connection):
-    if connection.in_waiting >= 4:
-        possible_header = connection.read(size=4)
-        possible_header_unpacked = struct.unpack(magic_header_format_str, possible_header)
-        if check_header(possible_header_unpacked):
-            packet = connection.read(size=packet_size)
-            packet_unpacked = struct.unpack(packet_format_str, packet)
-            return packet_unpacked
+    # if connection.in_waiting >= 4:
+    
+    possible_header = connection.read(size=1)
+    possible_header_unpacked = struct.unpack('B', possible_header)
+    # print(possible_header_unpacked[0], 0x8B)
+    if possible_header_unpacked[0] == 0x8B:
+        # print("check1")
+        next_header = connection.read(size=1)
+        possible_header_unpacked2 = struct.unpack('B', next_header)
+        if possible_header_unpacked2[0] == 0xEA:
+            # print("check2")
+            next_header2 = connection.read(size=1)
+            possible_header_unpacked3 = struct.unpack('B', next_header2)
+            print(possible_header_unpacked3)
+            if possible_header_unpacked3[0] == 0x27:
+                # print("here")
+                packet = connection.read(size=packet_size)
+                packet_unpacked = struct.unpack(packet_format_str, packet)
+                return packet_unpacked
+    
     return None
 
 def send_packet(connection, packet):
@@ -57,9 +70,30 @@ def send_packet(connection, packet):
             break
 
 if __name__ == '__main__':
-    connection = serial.Serial(port='/dev/ttyUSB0', baudrate=115200)
+    connection = serial.Serial(port='/dev/cu.usbserial-1440', baudrate=115200)
 
-    transmit_packet = [0.0, 0] + 3*8*[0]
+    transmit_packet = [1, 2]
+
+    while True:
+        print('sending {}'.format(transmit_packet))
+        send_packet(connection, transmit_packet)
+        
+        new_packet = try_receive_packet(connection)
+        while new_packet is None:
+            # print('sending {}'.format(transmit_packet))
+            # send_packet(connection, transmit_packet)
+
+            new_packet = try_receive_packet(connection)
+
+            time.sleep(0.001)
+
+        print("received {}".format(new_packet))
+
+        time.sleep(1)
+
+    
+        
+
 
     while True:
         new_packet = try_receive_packet(connection)
