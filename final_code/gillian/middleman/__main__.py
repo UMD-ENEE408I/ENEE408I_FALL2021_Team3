@@ -7,7 +7,7 @@ import time
 if __name__ == '__main__':
     vid = cam.initialize()
 
-    rfJetson = RFJetson("/dev/cu.usbserial-1440")
+    rfJetson = RFJetson("COM13")
 
     time.sleep(10)
 
@@ -19,7 +19,7 @@ if __name__ == '__main__':
     while resp is None:
         resp = client.startMaze()
         time.sleep(10)
-    
+
     time.sleep(5)
 
     mouseResp = rfJetson.send(resp)
@@ -36,7 +36,7 @@ if __name__ == '__main__':
             (intersectType, dist) = cam.intersect(vid)
             typeArr.append(intersectType)
             print(intersectType)
-        
+
         intersectType = max(set(typeArr), key=typeArr.count)
         print("AHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH")
         print(intersectType)
@@ -53,12 +53,5 @@ if __name__ == '__main__':
             time.sleep(5)
             if mouseResp == (200,200):
                 print("mouse responded")
-        
+
         time.sleep(2)
-
-
-
-
-    
-
-
