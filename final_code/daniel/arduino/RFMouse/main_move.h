@@ -42,7 +42,7 @@ int prevReadM2 = 0;
 float targetDeltaRead = 0; //desired change in position in encoder counts, will be const and det. by target vel
 float targetReadM1, targetReadM2;
 float curVelM1, curVelM2;
-float targetVel = 0.4; //vel in m/s
+float targetVel = 0.2; //vel in m/s
 float errorM1 = 0;
 float integralM1 = 0; //CHANGE THIS VALUE (either incr or decr, but keep it greater than 0)
 float derivM1 = 0;
@@ -443,10 +443,10 @@ void command_forward(double dist){ //move forward by specified distance (in m)
   
     //stopFlag = 0; //reset flag before checking light bar
     countArr();
-    if ((arr[5] == true || arr[4] == true) && numLitRight <= 2){ //too far to the right --> turn left (numLitRight<=2 for not a right corner)
+    if ((arr[5] == true || arr[4] == true || arr[3] == true || arr[2] == true || arr[1] == true || arr[0] == true) ){ //too far to the right --> turn left (numLitRight<=2 for not a right corner) && numLitRight <= 2
       M1_PWM += 10;
       M2_PWM -= 10;
-    } else if ((arr[7] == true || arr[8] == true) && numLitLeft <= 2){ //too far to the left --> turn right (numLitLeft<=2 for not a left corner)
+    } else if ((arr[7] == true || arr[8] == true || arr[9] == true || arr[10] == true || arr[11] == true || arr[12] == true)){ //too far to the left --> turn right (numLitLeft<=2 for not a left corner)  && numLitLeft <= 2
       M2_PWM += 10;
       M1_PWM -= 10;
     } /*else if (!(arr[0] || arr[1] || arr[2] || arr[3] || arr[4] || arr[5] || arr[6] || arr[7] || arr[8] || arr[9] || arr[10] || arr[11] || arr[12])){ //stop if can't see line
