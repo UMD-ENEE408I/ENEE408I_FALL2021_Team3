@@ -302,11 +302,13 @@ def intersect(vid):
                 downL = 0
                 downR = 0
 
+                threshold = 220
+
                 # Check left of center
                 leftX = centerX - 90
                 leftY = int(midH_slope*(leftX - centerX) + centerY)
                 cv2.circle(og_img,(leftX + c_h,leftY + int(len(og_img)*c)),radius=1,color=(0,0,255),thickness=2)
-                if og_gray[leftY + int(len(og_img)*c) + c_add][leftX + c_h] > 220 :
+                if og_gray[leftY + int(len(og_img)*c) + c_add][leftX + c_h] > threshold :
                     left = 1
                 # cv2.imwrite('og_samplePoints.jpg',og_img)
 
@@ -314,7 +316,7 @@ def intersect(vid):
                 rightX = centerX + 90
                 rightY = int(midH_slope*(rightX - centerX) + centerY)
                 cv2.circle(og_img,(rightX + c_h,rightY + int(len(og_img)*c)),radius=1,color=(0,0,100),thickness=2)
-                if og_gray[rightY + int(len(og_img)*c) + c_add][rightX + c_h] > 200 :
+                if og_gray[rightY + int(len(og_img)*c) + c_add][rightX + c_h] > threshold :
                     right = 1
                 # cv2.imwrite('og_samplePoints.jpg',og_img)
 
@@ -332,7 +334,7 @@ def intersect(vid):
                 if upY < 0:
                     upY = 0
                 cv2.circle(og_img,(centerX + c_h,upY + int(len(og_img)*c)),radius=1,color=(0,0,255),thickness=2)
-                if og_gray[upY + int(len(og_img)*c) + c_add][centerX + c_h] > 200 :
+                if og_gray[upY + int(len(og_img)*c) + c_add][centerX + c_h] > threshold :
                     up = 1
                 # cv2.imwrite('og_samplePoints.jpg',og_img)
 
@@ -352,19 +354,19 @@ def intersect(vid):
                     downY = len(img) - 1
                 # print("centerX + c_h: ", centerX + c_h, "\tdownY+adj: ", downY + int(len(og_img)*c))
                 cv2.circle(og_img,(centerX + c_h,downY + int(len(og_img)*c)),radius=1,color=(255,255,0),thickness=2)
-                if og_gray[downY + int(len(og_img)*c) + c_add][centerX + c_h] > 200 :
+                if og_gray[downY + int(len(og_img)*c) + c_add][centerX + c_h] > threshold :
                     down = 1
 
-                if og_gray[upY + int(len(og_img)*c)][leftX + c_h] > 220:
+                if og_gray[upY + int(len(og_img)*c)][leftX + c_h] > threshold:
                     upL = 1
 
-                if og_gray[upY + int(len(og_img)*c)][rightX + c_h] > 220:
+                if og_gray[upY + int(len(og_img)*c)][rightX + c_h] > threshold:
                     upR = 1
 
-                if og_gray[downY + int(len(og_img)*c)][leftX + c_h] > 220:
+                if og_gray[downY + int(len(og_img)*c)][leftX + c_h] > threshold:
                     downL = 1
 
-                if og_gray[downY + int(len(og_img)*c)][rightX + c_h] > 220:
+                if og_gray[downY + int(len(og_img)*c)][rightX + c_h] > threshold:
                     downR = 1
 
                 print("samplePoints:")
@@ -386,7 +388,7 @@ def intersect(vid):
                 # Display intersection type
                 binary = 8*left + 4*right + 2*up + down
                 mazeEnd = upL + upR + downL + downR
-                
+
                 print("binary = ", binary)
                 print()
                 if mazeEnd > 1:
@@ -422,4 +424,3 @@ def intersect(vid):
                 print("No path detected")
 
     return [type, int(center_dist)]
-
