@@ -59,6 +59,7 @@ class serverVars:
     currentCoords = {'1': (None, None), '2': (None, None), '3': (None, None)}
     nodeDict = {}
     startNode = None
+    mazeDimension = 20
 
 mazeExit = (10,10)
 
@@ -178,10 +179,8 @@ def visualizeMaze():
 
         return retNum
 
-    mazeDimension = 16
-
     # 0 is space, 1 is o, 2 is -, 3 is |
-    arr = [ [0] * mazeDimension for i in range(mazeDimension)]
+    arr = [ [0] * serverVars.mazeDimension for i in range(serverVars.mazeDimension)]
 
     for coords in serverVars.nodeDict.keys():
         x = coords[0]
@@ -281,13 +280,21 @@ def home():
     # should return a visualization of the stored maze
     return visualizeMaze()
 
+@application.route('/changeDimensions', methods = ['POST'])
+def changeDimensions():
+    # {"code": "codesonooopsies", "dim": 16}
+    data = request.form
+
+    if data["code"] == "codesonooopsies":
+        serverVars.mazeDimension = int(data["dim"])
+
 @application.route('/changeExit', methods = ['POST'])
 def changeExit():
     # {"code": "codesonooopsies", "x": 10, "y": 10}
     data = request.form
 
     if data["code"] == "codesonooopsies":
-        mazeExit = (int(data["x"]), int(data["y"]))
+        serverVars.mazeExit = (int(data["x"]), int(data["y"]))
 
 @application.route('/resetServer', methods = ['POST'])
 def resetServer():
@@ -551,9 +558,14 @@ def saveCoords(robot_id):
                     elif dir == WEST:
                         serverVars.currentCoords[robot_id] = (x-1, y)
                 else:
-                    # This is bad just stop for now
-                    print("bad")
-                    retDirection = RFDirectionCommands.LEFT
+                    # Could be very bad or could be deadend
+
+
+                    # check if its an deadend
+                    if newNode.type == IntersectionTypes.END or newNode.type == IntersectionTypes.LEFT_END or newNode.type == IntersectionTypes.RIGHT_END or newNode.type == IntersectionTypes.REVERSE_END:
+                        retDirection = RFDirectionCommands.LEFT
+                        serverVars.currentDirection[robot_id] = (direction + 2) % 4
+
     else:
         dir = (3 + direction) % 4
         
