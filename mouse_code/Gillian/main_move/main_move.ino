@@ -27,7 +27,7 @@ int adc1_buf[8];
 int adc2_buf[8];
 bool arr[16];
 
-const unsigned int BUF_THRESHOLD = 710; //for G: 560, for C: 600, for D: 710
+const unsigned int BUF_THRESHOLD = 560; //for G: 560, for C: 600, for D: 710
 //float distTune = 135/145; //for G: , for C: 135/145, for D: 15/16
 int command_int = 0; //for testing, REMOVE IN FINAL CODE
 
@@ -336,8 +336,8 @@ void command_forward(double dist){ //move forward by specified distance (in m)
   prevReadM2 = -1*enc2.read();
   targetReadM1 = prevReadM1;
   targetReadM2 = prevReadM2;
-  float targetFinalReadM1 = dist/(0.032*M_PI)*360*15/16+prevReadM1; //multiply by G: 30/33, C and D: 15/16 to adjust for miscalculation
-  float targetFinalReadM2 = dist/(0.032*M_PI)*360*15/16+prevReadM2; //multiply by G: 30/33, C and D: 15/16 to adjust for miscalculation
+  float targetFinalReadM1 = dist/(0.032*M_PI)*360+prevReadM1; //multiply by G: 30/33, C and D: 15/16 to adjust for miscalculation
+  float targetFinalReadM2 = dist/(0.032*M_PI)*360+prevReadM2; //multiply by G: 30/33, C and D: 15/16 to adjust for miscalculation
   prevTime = micros();
   while (!completedForward){  //PID loop
     long curTime = micros(); //time since Arduino started in microseconds
@@ -451,11 +451,11 @@ void command_forward(double dist){ //move forward by specified distance (in m)
     //Serial.println(commandCurTime - commandStartTime);
     Serial.print(curReadM1);
     Serial.print("\t");
-    Serial.print(targetFinalReadM1);
-    Serial.print("\t\t");
+    Serial.print(targetReadM1);
+    Serial.print("\t");
     Serial.print(curReadM2);
     Serial.print("\t");
-    Serial.print(targetFinalReadM2);
+    Serial.print(targetReadM2);
     Serial.println();
   }
   stop_move();
@@ -473,6 +473,7 @@ void setup() {
   pinMode(M1_IN2, OUTPUT);
   pinMode(M2_IN1, OUTPUT);
   pinMode(M2_IN2, OUTPUT);
+  delay(5000);
 }
 
 void loop() {
@@ -516,6 +517,25 @@ void loop() {
   delay(10);
   */
   //command_left();
+  delay(3000);
+  command_forward(0.15);
+  /*delay(1000);
+  command_right_pid();
   delay(1000);
   command_forward(0.15);
+  delay(1000);
+  command_left_pid();
+  delay(1000);
+  command_forward(0.15);
+  delay(1000);
+  command_right_pid();
+  delay(1000);
+  command_forward(0.15);
+  delay(2000);
+  command_left_pid();
+  delay(1000);
+  command_forward(0.15);
+  delay(1000);
+  command_right_pid();
+  delay(1000);*/
 }
