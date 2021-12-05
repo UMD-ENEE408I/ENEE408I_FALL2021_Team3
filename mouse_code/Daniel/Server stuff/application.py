@@ -553,7 +553,7 @@ def saveCoords(robot_id):
                 else:
                     # This is bad just stop for now
                     print("bad")
-                    retDirection = RFDirectionCommands.STOP
+                    retDirection = RFDirectionCommands.LEFT
     else:
         dir = (3 + direction) % 4
         

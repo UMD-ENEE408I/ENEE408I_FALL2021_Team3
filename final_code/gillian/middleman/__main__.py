@@ -9,7 +9,7 @@ if __name__ == '__main__':
 
     rfJetson = RFJetson("COM13")
 
-    time.sleep(10)
+    time.sleep(5)
 
     resp = client.resetServer()
 
@@ -19,8 +19,8 @@ if __name__ == '__main__':
     while resp is None:
         resp = client.startMaze()
         time.sleep(10)
-
-    time.sleep(5)
+    
+    time.sleep(3)
 
     mouseResp = rfJetson.send(resp)
 
@@ -28,7 +28,7 @@ if __name__ == '__main__':
         print("mouse responded")
 
 
-    time.sleep(5)
+    time.sleep(3)
 
     while True:
         typeArr = []
@@ -46,12 +46,12 @@ if __name__ == '__main__':
         if resp is not None:
             if resp == 2 or resp == 3: #left or right
                 mouseResp = rfJetson.send(1)
-                time.sleep(5)
+                time.sleep(1)
                 if mouseResp != (200, 200):
                     break
             mouseResp = rfJetson.send(resp)
-            time.sleep(5)
+            time.sleep(1)
             if mouseResp == (200,200):
                 print("mouse responded")
-
-        time.sleep(2)
+        
+        time.sleep(1)

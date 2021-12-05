@@ -16,12 +16,12 @@ def close(vid):
 
 def intersect(vid):
 
-    ret = np.load("middleman/Calibration/camera3_params/ret.npy")
-    mtx = np.load("middleman/Calibration/camera3_params/mtx.npy")
-    dist = np.load("middleman/Calibration/camera3_params/dist.npy")
-    rvecs = np.load("middleman/Calibration/camera3_params/rvecs.npy")
-    tvecs = np.load("middleman/Calibration/camera3_params/tvecs.npy")
-    newmtx = np.load("middleman/Calibration/camera3_params/newmtx.npy")
+    ret = np.load("middleman/Calibration/camera2_params/ret.npy")
+    mtx = np.load("middleman/Calibration/camera2_params/mtx.npy")
+    dist = np.load("middleman/Calibration/camera2_params/dist.npy")
+    rvecs = np.load("middleman/Calibration/camera2_params/rvecs.npy")
+    tvecs = np.load("middleman/Calibration/camera2_params/tvecs.npy")
+    newmtx = np.load("middleman/Calibration/camera2_params/newmtx.npy")
 
     type = -1
     center_dist = -1
@@ -39,17 +39,17 @@ def intersect(vid):
         # c_h = 40
         # c_v = 70
 
-        # # Cam 2
-        # c = 0.3
-        # c_add = 0
-        # c_h = 50
-        # c_v = 150
+        # Cam 2
+        c = 0.3
+        c_add = 0
+        c_h = 50
+        c_v = 150
 
         # # Cam 3
-        c = 0.1
-        c_add = 0
-        c_h = 20
-        c_v = 40
+        # c = 0.1
+        # c_add = 0
+        # c_h = 20
+        # c_v = 40
 
         img = og_img[int(len(og_img)*c + c_add):len(og_img)-c_v, c_h:len(og_img[0])-c_h]      # crop image
         print("og_img dimensions: xLen = ", len(og_img[0]), "\tyLen = ", len(og_img))
@@ -386,11 +386,11 @@ def intersect(vid):
 
     return [type, int(center_dist)]
 
-v = initialize()
-print("start 1")
-arr = intersect(v)
-print("\n\ntype1 = ", arr[0], " at ", arr[1], " cm")
-print("start 2")
-t = intersect(v)
-print("\n\ntype2 = ", t)
-close(v)
+# v = initialize()
+# print("start 1")
+# arr = intersect(v)
+# print("\n\ntype1 = ", arr[0], " at ", arr[1], " cm")
+# print("start 2")
+# t = intersect(v)
+# print("\n\ntype2 = ", t)
+# close(v)

@@ -5,6 +5,8 @@ BLEService motorService("0fe79935-cd39-480a-8a44-06b70f36f248");
 // create switch characteristic and allow remote device to read and write
 BLEUnsignedIntCharacteristic motorCharacteristic("0fe79935-cd39-480a-8a44-06b70f36f249", BLERead | BLEWrite);
 
+int x = 0;
+
 void setup() {
   Serial.begin(115200);
 
@@ -27,7 +29,8 @@ void setup() {
 
   // assign event handlers for characteristic
   motorCharacteristic.setEventHandler(BLEWritten, motorCharacteristicWritten);
-  motorCharacteristic.setValue(0);
+//  motorCharacteristic.setEventHandler(BLERead, idk);
+  motorCharacteristic.setValue(x);
 
   BLE.advertise();
   Serial.println("Waiting for connection");
@@ -35,6 +38,13 @@ void setup() {
 
 void loop() {
   BLE.poll();
+
+//  x = x + 1;
+//
+//  motorCharacteristic.writeValue(x);
+//
+//  delay(100);
+
 }
 
 void blePeripheralConnectHandler(BLEDevice central) {
@@ -56,3 +66,7 @@ void motorCharacteristicWritten(BLEDevice central, BLECharacteristic characteris
   Serial.print(" ");
   Serial.println(right);
 }
+
+//void idk(BLEDevice central, BLECharacteristic characteristic) {
+//  Serial.print("AHHHHHHHH");
+//}

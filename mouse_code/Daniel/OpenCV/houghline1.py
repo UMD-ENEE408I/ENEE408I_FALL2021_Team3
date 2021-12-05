@@ -2,14 +2,14 @@ import cv2
 import numpy as np
 import math
 
-vid = cv2.VideoCapture(1)
+vid = cv2.VideoCapture(0)
 
-ret = np.load("../../Caitlin/OpenCV/Calibration/camera_params/ret.npy")
-mtx = np.load("../../Caitlin/OpenCV/Calibration/camera_params/mtx.npy")
-dist = np.load("../../Caitlin/OpenCV/Calibration/camera_params/dist.npy")
-rvecs = np.load("../../Caitlin/OpenCV/Calibration/camera_params/rvecs.npy")
-tvecs = np.load("../../Caitlin/OpenCV/Calibration/camera_params/tvecs.npy")
-newmtx = np.load("../../Caitlin/OpenCV/Calibration/camera_params/newmtx.npy")
+ret = np.load("../../Caitlin/OpenCV/Calibration/camera3_params/ret.npy")
+mtx = np.load("../../Caitlin/OpenCV/Calibration/camera3_params/mtx.npy")
+dist = np.load("../../Caitlin/OpenCV/Calibration/camera3_params/dist.npy")
+rvecs = np.load("../../Caitlin/OpenCV/Calibration/camera3_params/rvecs.npy")
+tvecs = np.load("../../Caitlin/OpenCV/Calibration/camera3_params/tvecs.npy")
+newmtx = np.load("../../Caitlin/OpenCV/Calibration/camera3_params/newmtx.npy")
 
 while(vid.isOpened()):
 
