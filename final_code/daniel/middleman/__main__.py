@@ -19,7 +19,7 @@ if __name__ == '__main__':
 
     mouseResp = rfJetson.send(1, 15)
 
-    while mouseResp != (400,400):
+    while mouseResp [0] < 100:
         print("bad response; waiting 5 seconds")
         time.sleep(5)
         print("sending again")
@@ -56,7 +56,7 @@ if __name__ == '__main__':
             for cmd in resp:
                 if cmd == 2 or cmd == 3: #left or right
                     mouseResp = rfJetson.send(1, intersectDist)
-                    while mouseResp != (400,400):
+                    while mouseResp[0] < 100:
                         print("bad response; waiting 5 seconds")
                         time.sleep(5)
                         print("sending again")
@@ -64,7 +64,7 @@ if __name__ == '__main__':
                     print("mouse responded")
                     time.sleep(.5)
                 mouseResp = rfJetson.send(cmd, intersectDist)
-                while mouseResp != (400,400):
+                while mouseResp[0] < 100:
                     print("bad response; waiting 5 seconds")
                     time.sleep(5)
                     print("sending again")
