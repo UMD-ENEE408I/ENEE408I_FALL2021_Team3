@@ -564,7 +564,19 @@ def saveCoords(robot_id):
                     # check if its an deadend
                     if newNode.type == IntersectionTypes.END or newNode.type == IntersectionTypes.LEFT_END or newNode.type == IntersectionTypes.RIGHT_END or newNode.type == IntersectionTypes.REVERSE_END:
                         retDirection = RFDirectionCommands.LEFT
-                        serverVars.currentDirection[robot_id] = (direction + 2) % 4
+                        dir = (direction + 2) % 4
+                        serverVars.currentDirection[robot_id] = dir
+                        serverVars.currentNode[robot_id] = newNode.directions[(dir)]
+                        (x,y) = serverVars.currentCoords[robot_id]
+                        if dir == NORTH:
+                            serverVars.currentCoords[robot_id] = (x, y+1)
+                        elif dir == EAST:
+                            serverVars.currentCoords[robot_id] = (x+1, y)
+                        elif dir == SOUTH:
+                            serverVars.currentCoords[robot_id] = (x, y-1)
+                        elif dir == WEST:
+                            serverVars.currentCoords[robot_id] = (x-1, y)
+                        
 
     else:
         dir = (3 + direction) % 4
@@ -617,7 +629,18 @@ def saveCoords(robot_id):
                     # deadend should turn 180 degrees
                     print("deadend")
                     retDirection = RFDirectionCommands.LEFT
-                    serverVars.currentDirection[robot_id] = (direction + 2) % 4
+                    dir = (direction + 2) % 4
+                    serverVars.currentDirection[robot_id] = dir
+                    currentNode[robot_id] = newNode.directions[(dir)]
+                    (x,y) = serverVars.currentCoords[robot_id]
+                    if dir == NORTH:
+                        serverVars.currentCoords[robot_id] = (x, y+1)
+                    elif dir == EAST:
+                        serverVars.currentCoords[robot_id] = (x+1, y)
+                    elif dir == SOUTH:
+                        serverVars.currentCoords[robot_id] = (x, y-1)
+                    elif dir == WEST:
+                        serverVars.currentCoords[robot_id] = (x-1, y)
     
     # Return a direction command
     return {"response": retDirection}
