@@ -116,7 +116,7 @@ class RFJetson:
     def setupRF(self):
         resp = None
         
-        while (200,200) != resp:
+        while (300,300) != resp:
             resp = self.send(0, 15)
             time.sleep(3)
 

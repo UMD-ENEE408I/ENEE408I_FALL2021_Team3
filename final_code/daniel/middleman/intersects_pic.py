@@ -309,7 +309,7 @@ def intersect(vid):
                 downL = 0
                 downR = 0
 
-                threshold = 220
+                threshold = 215
 
                 # Check left of center
                 leftX = centerX - 90

@@ -64,19 +64,35 @@ void loop() {
     Serial.print(" ");
     Serial.println(receive_packet.distance);
     Serial.println(receive_packet.command == 1);
-
+    
+    int commandCompleted = 0;
     if (receive_packet.command == 0){
       stop_move();
     }else if (receive_packet.command == 1){
+      completedForward = 0;
       command_forward((double) ((double) receive_packet.distance)/100);
+      if (completedForward == 1)
+        commandCompleted = 1;
     }else if (receive_packet.command == 2){
+      completedTurnL = 0;
       command_left_pid();
+      if (completedTurnL == 1)
+        commandCompleted = 1;
     }else if (receive_packet.command == 3){
+      completedTurnR = 0;
       command_right_pid();
+      if (completedTurnR == 1)
+        commandCompleted = 1;
     }
     
-    send_packet.command = 200;
-    send_packet.distance = 200;
+    if (commandCompleted == 1){     //sends 400,400 if movement was completed
+      send_packet.command = 400;
+      send_packet.distance = 400;
+    } else {                        //sends 300,300 if movement wasn't completed
+      send_packet.command = 300;
+      send_packet.distance = 300;
+    }
+    
     
     radio.stopListening();
   
