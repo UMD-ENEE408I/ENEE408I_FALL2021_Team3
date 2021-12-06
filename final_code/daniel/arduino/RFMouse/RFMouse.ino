@@ -20,6 +20,8 @@ uint8_t mouse_address[] = "mouseN";
 uint8_t jetson_address[] = "jetNN";
 uint8_t channel = 42; // (0-127) each team should use a different channel(s)
 
+//int prevPacketCommand, prevPacketDistance;
+
 // Max possible size is 32 bytes (this packet is 32 bytes)
 typedef struct packet {
   int32_t command;
@@ -88,11 +90,14 @@ void loop() {
     if (commandCompleted == 1){     //sends 400,400 if movement was completed
       send_packet.command = 400;
       send_packet.distance = 400;
+      //prevPacketCommand = 400;
+      //prevPacketDistance = 400;
     } else {                        //sends 300,300 if movement wasn't completed
       send_packet.command = 300;
       send_packet.distance = 300;
+      //prevPacketCommand = 300;
+      //prevPacketDistance = 300;
     }
-    
     
     radio.stopListening();
   

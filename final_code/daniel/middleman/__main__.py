@@ -17,7 +17,7 @@ if __name__ == '__main__':
     
     time.sleep(.5)
 
-    mouseResp = rfJetson.send(resp[0], 15)
+    mouseResp = rfJetson.send(1, 15)
 
     while mouseResp != (400,400):
         print("bad response; waiting 5 seconds")
@@ -60,15 +60,15 @@ if __name__ == '__main__':
                         print("bad response; waiting 5 seconds")
                         time.sleep(5)
                         print("sending again")
-                        mouseResp = rfJetson.send(cmd, 15)
+                        mouseResp = rfJetson.send(1, 15)
                     print("mouse responded")
-                    time.sleep(.25)
+                    time.sleep(.5)
                 mouseResp = rfJetson.send(cmd, intersectDist)
                 while mouseResp != (400,400):
                     print("bad response; waiting 5 seconds")
                     time.sleep(5)
                     print("sending again")
                     mouseResp = rfJetson.send(cmd, 15)
-                time.sleep(.25)
+                time.sleep(1)
         
         # time.sleep(.5)

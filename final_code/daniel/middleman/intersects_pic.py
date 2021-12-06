@@ -313,6 +313,8 @@ def intersect(vid):
 
                 # Check left of center
                 leftX = centerX - 90
+                if leftX < 0:
+                    leftX = 0
                 leftY = int(midH_slope*(leftX - centerX) + centerY)
                 cv2.circle(og_img,(leftX + c_h,leftY + int(len(og_img)*c)),radius=1,color=(0,0,255),thickness=2)
                 if og_gray[leftY + int(len(og_img)*c) + c_add][leftX + c_h] > threshold :
@@ -321,6 +323,8 @@ def intersect(vid):
 
                 # Check right of center
                 rightX = centerX + 90
+                if rightX >= len(og_img[0]):
+                    rightX = len(og_img[0]) - 1
                 rightY = int(midH_slope*(rightX - centerX) + centerY)
                 cv2.circle(og_img,(rightX + c_h,rightY + int(len(og_img)*c)),radius=1,color=(0,0,100),thickness=2)
                 if og_gray[rightY + int(len(og_img)*c) + c_add][rightX + c_h] > threshold :

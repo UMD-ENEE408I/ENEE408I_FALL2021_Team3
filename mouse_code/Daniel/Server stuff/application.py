@@ -366,34 +366,38 @@ def closestUnexploredNode(node, commandList, dir):
         # try left
         newDir = (3 + currDir) % 4
         if curr.directions[newDir] is not None and curr.type[newDir] == 1:
-            cmdList.append(RFDirectionCommands.LEFT)
+            cmdListCpy = [i for i in cmdList]
+            cmdListCpy.append(RFDirectionCommands.LEFT)
 
-            queue.append((curr.directions[newDir], cmdList, newDir))
+            queue.append((curr.directions[newDir], cmdListCpy, newDir))
         
         # try right
         newDir = (1 + currDir) % 4
         if curr.directions[newDir] is not None and curr.type[newDir] == 1:
-            cmdList.append(RFDirectionCommands.RIGHT)
+            cmdListCpy = [i for i in cmdList]
+            cmdListCpy.append(RFDirectionCommands.RIGHT)
 
-            queue.append((curr.directions[newDir], cmdList, newDir))
+            queue.append((curr.directions[newDir], cmdListCpy, newDir))
         
         # try forward
         newDir = currDir
         if curr.directions[newDir] is not None and curr.type[newDir] == 1:
-            cmdList.append(RFDirectionCommands.FORWARD)
+            cmdListCpy = [i for i in cmdList]
+            cmdListCpy.append(RFDirectionCommands.FORWARD)
 
-            queue.append((curr.directions[newDir], cmdList, newDir))
+            queue.append((curr.directions[newDir], cmdListCpy, newDir))
 
         # try back
         newDir = (2 + currDir) % 4
         if curr.directions[newDir] is not None and curr.type[newDir] == 1:
+            cmdListCpy = [i for i in cmdList]
             if curr.type[(3 + currDir) % 4] == 1:
                 # if it has a left do a leftleft
-                cmdList.append(RFDirectionCommands.LEFTLEFT)
+                cmdListCpy.append(RFDirectionCommands.LEFTLEFT)
             else:
-                cmdList.append(RFDirectionCommands.LEFT)
+                cmdListCpy.append(RFDirectionCommands.LEFT)
             
-            queue.append(curr.directions[newDir], cmdList, newDir)
+            queue.append((curr.directions[newDir], cmdListCpy, newDir))
 
     return None
 
