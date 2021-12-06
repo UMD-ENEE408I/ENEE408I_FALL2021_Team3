@@ -33,6 +33,11 @@ const unsigned int BUF_THRESHOLD = 710; //for G: 560, for C: 600, for D: 710
 //float distTune = 135/145; //for G: , for C: 135/145, for D: 15/16
 int command_int = 0; //for testing, REMOVE IN FINAL CODE
 
+//flags
+int completedTurnR = 0;
+int completedTurnL = 0;
+int completedForward = 0; //flag
+
 //PID vars
 int M1_PWM = 0;
 int M2_PWM = 0;
@@ -117,7 +122,7 @@ void countArr(){
 void command_right_pid(){
   targetVel = 0.1;
   int passedIR8 = 0; //flag
-  int completedTurnR = 0; //flag
+  completedTurnR = 0; //reset flag
   prevReadM1 = enc1.read();
   prevReadM2 = enc2.read();
   int initialReadM2 = prevReadM2; //M2 encoder(0)
@@ -125,7 +130,7 @@ void command_right_pid(){
   targetReadM2 = prevReadM2;
   prevTime = micros();
   int ogComTime = prevTime;
-  while (!completedTurnR){
+  while (completedTurnR == 0){
     long curTime = micros(); //time since Arduino started in microseconds
     int curReadM1 = enc1.read();
     int curReadM2 = enc2.read();
@@ -233,7 +238,7 @@ void command_right_pid(){
 void command_left_pid(){
   targetVel = 0.1;
   int passedIR5 = 0; //flag
-  int completedTurnL = 0; //flag
+  completedTurnL = 0; //flag
   prevReadM1 = -1*enc1.read();
   prevReadM2 = -1*enc2.read();
   int initialReadM2 = prevReadM2; //M2 encoder(0)
@@ -241,7 +246,7 @@ void command_left_pid(){
   targetReadM2 = prevReadM2;
   prevTime = micros();
   int ogComTime = prevTime;
-  while (!completedTurnL){
+  while (completedTurnL == 0){
     long curTime = micros(); //time since Arduino started in microseconds
     int curReadM1 = -1*enc1.read();
     int curReadM2 = -1*enc2.read();
@@ -343,12 +348,12 @@ void command_left_pid(){
 }
 
 void command_forward(double dist){ //move forward by specified distance (in m)
-  Serial.print("command_forward dist: ");
-  Serial.println(dist);
+  //Serial.print("command_forward dist: ");
+  //Serial.println(dist);
   //long commandStartTime = micros();
   //long commandCurTime = commandStartTime;
   //long commandDeltaTime = dist*1.0e6/targetVel*1.1; //idk why this needs the additional scaling factor but it works
-  int completedForward = 0;
+  completedForward = 0; //flag
   int adjustmentCount = 0;
   prevReadM1 = enc1.read();
   prevReadM2 = -1*enc2.read();
@@ -357,7 +362,7 @@ void command_forward(double dist){ //move forward by specified distance (in m)
   float targetFinalReadM1 = dist/(0.032*M_PI)*360*15/16+prevReadM1; //multiply by G: 30/33, C and D: 15/16 to adjust for miscalculation
   float targetFinalReadM2 = dist/(0.032*M_PI)*360*15/16+prevReadM2; //multiply by G: 30/33, C and D: 15/16 to adjust for miscalculation
   prevTime = micros();
-  while (!completedForward){  //PID loop
+  while (completedForward == 0){  //PID loop
     long curTime = micros(); //time since Arduino started in microseconds
     int curReadM1 = enc1.read();
     int curReadM2 = -1*enc2.read();
@@ -426,23 +431,23 @@ void command_forward(double dist){ //move forward by specified distance (in m)
     for (int i = 0; i < 8; i++) {
       if (adc1_buf[i] < BUF_THRESHOLD) {
         arr[count] = true;
-        Serial.print("AH"); Serial.print("\t");
+        //Serial.print("AH"); Serial.print("\t");
       } else {
         arr[count] = false;
-        Serial.print("--"); Serial.print("\t");
+        //Serial.print("--"); Serial.print("\t");
       }
       count = count + 1;
   
       if (adc2_buf[i] < BUF_THRESHOLD) {
         arr[count] = true;
-        Serial.print("AH"); Serial.print("\t");
+        //Serial.print("AH"); Serial.print("\t");
       } else {
         arr[count] = false;
-        Serial.print("--"); Serial.print("\t");
+        //Serial.print("--"); Serial.print("\t");
       }
       count = count + 1;
     }
-    Serial.println();
+    //Serial.println();
   
     //stopFlag = 0; //reset flag before checking light bar
     countArr();
@@ -476,7 +481,7 @@ void command_forward(double dist){ //move forward by specified distance (in m)
     delay(10);
     curReadM1 = enc1.read();
     curReadM2 = -1*enc2.read();
-    if (curReadM1 >= targetFinalReadM1 || curReadM2 >= targetFinalReadM2)
+    if (curReadM1 >= targetFinalReadM1 || curReadM2 >= targetFinalReadM2) //if completed forward movement
       completedForward = 1;
     //commandCurTime = micros();
     //Serial.println(commandCurTime - commandStartTime);
