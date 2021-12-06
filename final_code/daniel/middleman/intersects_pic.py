@@ -16,12 +16,19 @@ def close(vid):
 
 def intersect(vid):
 
-    ret = np.load("./Calibration/camera3_params/ret.npy")
-    mtx = np.load("./Calibration/camera3_params/mtx.npy")
-    dist = np.load("./Calibration/camera3_params/dist.npy")
-    rvecs = np.load("./Calibration/camera3_params/rvecs.npy")
-    tvecs = np.load("./Calibration/camera3_params/tvecs.npy")
-    newmtx = np.load("./Calibration/camera3_params/newmtx.npy")
+    ret = np.load("middleman/Calibration/camera3_params/ret.npy")
+    mtx = np.load("middleman/Calibration/camera3_params/mtx.npy")
+    dist = np.load("middleman/Calibration/camera3_params/dist.npy")
+    rvecs = np.load("middleman/Calibration/camera3_params/rvecs.npy")
+    tvecs = np.load("middleman/Calibration/camera3_params/tvecs.npy")
+    newmtx = np.load("middleman/Calibration/camera3_params/newmtx.npy")
+
+    # ret = np.load("./Calibration/camera3_params/ret.npy")
+    # mtx = np.load("./Calibration/camera3_params/mtx.npy")
+    # dist = np.load("./Calibration/camera3_params/dist.npy")
+    # rvecs = np.load("./Calibration/camera3_params/rvecs.npy")
+    # tvecs = np.load("./Calibration/camera3_params/tvecs.npy")
+    # newmtx = np.load("./Calibration/camera3_params/newmtx.npy")
 
     type = -1
     center_dist = -1
@@ -46,7 +53,7 @@ def intersect(vid):
         # c_v = 40
 
         # Cam 3
-        c = 0.4
+        c = 0.38
         c_add = 0
         c_h = 20
         c_v = 40
@@ -285,7 +292,7 @@ def intersect(vid):
                 print("centerX = ", centerX, "\txDim = ", len(img[0]))
                 print("centerY = ", centerY, "\tyDim = ", len(img))
                 # center_dist = 13*math.pow(1.03,-0.2*centerY) + 8           # distance eq for cam 1, mouse C
-                center_dist = 13*math.pow(1.05,-0.1*centerY) + 7           # distance eq for cam 3, mouse D
+                center_dist = 12*math.pow(1.03,-0.3*centerY) + 8           # distance eq for cam 3, mouse D
                 # center_dist = 13*math.pow(1.03,-0.2*centerY) + 7            # distance eq for cam 2, mouse G
                 print("distance to intersection: ", center_dist)
                 cv2.circle(img,(centerX,centerY),radius=1,color=(0,255,0),thickness=2)
@@ -382,6 +389,7 @@ def intersect(vid):
 
                 # cv2.imwrite('samplePoints.jpg',img)
                 cv2.imwrite('og_samplePoints.jpg',og_img)
+                cv2.imshow('og_samplePoints',og_img)
                 print("left, right, up, down: ", left, ", ", right, ", ", up, ", ", down)
 
 
@@ -423,4 +431,13 @@ def intersect(vid):
             else:
                 print("No path detected")
 
-    return [type, int(center_dist)]
+    if(center_dist - math.floor(center_dist)-0.5 < 0):
+        center_dist = math.floor(center_dist)
+    else:
+        center_dist = math.ceil(center_dist)
+    return (type, center_dist)
+
+# v = initialize()
+# [t, d] = intersect(v)
+# print("type = ", t, ", distance = ", d)
+# close(v)

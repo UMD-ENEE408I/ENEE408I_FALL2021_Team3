@@ -220,9 +220,9 @@ void command_right_pid(){
     delay(10);
     
     long checkBarTime = micros(); //time at which IR sensors were checked
-    if (arr[7] == true && passedIR8 == 0){
+    if (arr[6] == true && passedIR8 == 0){
       passedIR8 = 1;
-    } else if (arr[7] == true && (checkBarTime - ogComTime > 300000)){  //if turn has executed for >1s, check if centered on straight path to ensure it's past any forward paths
+    } else if (arr[6] == true && (checkBarTime - ogComTime > 300000)){  //if turn has executed for >1s, check if centered on straight path to ensure it's past any forward paths
       completedTurnR = 1;
       //Serial.println("centered");
     }
@@ -332,9 +332,9 @@ void command_left_pid(){
     delay(10);
     
     long checkBarTime = micros(); //time at which IR sensors were checked
-    if (arr[7] == true && passedIR5 == 0){
+    if (arr[6] == true && passedIR5 == 0){
       passedIR5 = 1;
-    } else if (arr[7] == true && (checkBarTime - ogComTime > 300000)){  //if turn has executed for >1s, check if centered on straight path to ensure it's past any forward paths
+    } else if (arr[6] == true && (checkBarTime - ogComTime > 300000)){  //if turn has executed for >1s, check if centered on straight path to ensure it's past any forward paths
       completedTurnL = 1;
       //Serial.println("centered");
     }
@@ -343,10 +343,13 @@ void command_left_pid(){
 }
 
 void command_forward(double dist){ //move forward by specified distance (in m)
+  Serial.print("command_forward dist: ");
+  Serial.println(dist);
   //long commandStartTime = micros();
   //long commandCurTime = commandStartTime;
   //long commandDeltaTime = dist*1.0e6/targetVel*1.1; //idk why this needs the additional scaling factor but it works
   int completedForward = 0;
+  int adjustmentCount = 0;
   prevReadM1 = enc1.read();
   prevReadM2 = -1*enc2.read();
   targetReadM1 = prevReadM1;
@@ -443,12 +446,24 @@ void command_forward(double dist){ //move forward by specified distance (in m)
   
     //stopFlag = 0; //reset flag before checking light bar
     countArr();
-    if ((arr[5] == true || arr[4] == true || arr[3] == true || arr[2] == true || arr[1] == true || arr[0] == true) ){ //too far to the right --> turn left (numLitRight<=2 for not a right corner) && numLitRight <= 2
+    if ((arr[5] == true || arr[4] == true || arr[3] == true || arr[2] == true || arr[1] == true || arr[0] == true) && numLitRight <= 3){ //too far to the right --> turn left (numLitRight<=2 for not a right corner) && numLitRight <= 2
       M1_PWM += 10;
       M2_PWM -= 10;
-    } else if ((arr[7] == true || arr[8] == true || arr[9] == true || arr[10] == true || arr[11] == true || arr[12] == true)){ //too far to the left --> turn right (numLitLeft<=2 for not a left corner)  && numLitLeft <= 2
+      adjustmentCount++;
+      if(adjustmentCount == 7){
+        targetReadM1 += 1;
+        targetFinalReadM1 += 1;
+        adjustmentCount = 0;
+      }
+    } else if ((arr[7] == true || arr[8] == true || arr[9] == true || arr[10] == true || arr[11] == true || arr[12] == true) && numLitLeft <= 3){ //too far to the left --> turn right (numLitLeft<=2 for not a left corner)  && numLitLeft <= 2
       M2_PWM += 10;
       M1_PWM -= 10;
+      adjustmentCount++;
+      if(adjustmentCount == 7){
+        targetReadM2 += 1;
+        targetFinalReadM2 += 1;
+        adjustmentCount = 0;
+      }
     } /*else if (!(arr[0] || arr[1] || arr[2] || arr[3] || arr[4] || arr[5] || arr[6] || arr[7] || arr[8] || arr[9] || arr[10] || arr[11] || arr[12])){ //stop if can't see line
       M1_PWM = 0;
       M2_PWM = 0;

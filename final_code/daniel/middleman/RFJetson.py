@@ -85,9 +85,9 @@ class RFJetson:
             else:
                 break
 
-    def send(self, command):
+    def send(self, command, dist):
 
-        transmit_packet = [command, 2]
+        transmit_packet = [command, dist]
 
         print('sending {}'.format(transmit_packet))
         self.__send_packet(transmit_packet)
@@ -117,7 +117,7 @@ class RFJetson:
         resp = None
         
         while (200,200) != resp:
-            resp = self.send(0)
+            resp = self.send(0, 15)
             time.sleep(3)
 
 
