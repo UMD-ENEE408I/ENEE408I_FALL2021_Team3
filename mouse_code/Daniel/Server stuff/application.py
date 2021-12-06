@@ -97,6 +97,7 @@ def createNode(x,y, type):
 def mazeFullyExplored():
     for node in serverVars.nodeDict.values():
         if not node.fullyExplored():
+            break
             return False
     
     return True
