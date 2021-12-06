@@ -356,24 +356,30 @@ def closestUnexploredNode(node, commandList, dir):
 
     queue = [(node, commandList, dir)]
 
-    while queue:
-        curr, cmdList, currDir = queue.pop()
+    while len(queue) > 0:
+        curr, cmdList, currDir = queue.pop(0)
+        print("popped")
         # if curr is None:
         #     return None
         if curr.fullyExplored() == False:
-            return (cmdList, currDir)
+            print("hereahhhh" ,cmdList)
+            return (curr, cmdList, currDir)
         
         # try left
         newDir = (3 + currDir) % 4
         if curr.directions[newDir] is not None and curr.type[newDir] == 1:
+            print("left")
             cmdListCpy = [i for i in cmdList]
             cmdListCpy.append(RFDirectionCommands.LEFT)
+
+            print(cmdListCpy)
 
             queue.append((curr.directions[newDir], cmdListCpy, newDir))
         
         # try right
         newDir = (1 + currDir) % 4
         if curr.directions[newDir] is not None and curr.type[newDir] == 1:
+            print("right")
             cmdListCpy = [i for i in cmdList]
             cmdListCpy.append(RFDirectionCommands.RIGHT)
 
@@ -382,6 +388,7 @@ def closestUnexploredNode(node, commandList, dir):
         # try forward
         newDir = currDir
         if curr.directions[newDir] is not None and curr.type[newDir] == 1:
+            print("forward")
             cmdListCpy = [i for i in cmdList]
             cmdListCpy.append(RFDirectionCommands.FORWARD)
 
@@ -390,6 +397,7 @@ def closestUnexploredNode(node, commandList, dir):
         # try back
         newDir = (2 + currDir) % 4
         if curr.directions[newDir] is not None and curr.type[newDir] == 1:
+            print("back")
             cmdListCpy = [i for i in cmdList]
             if curr.type[(3 + currDir) % 4] == 1:
                 # if it has a left do a leftleft
@@ -398,6 +406,8 @@ def closestUnexploredNode(node, commandList, dir):
                 cmdListCpy.append(RFDirectionCommands.LEFT)
             
             queue.append((curr.directions[newDir], cmdListCpy, newDir))
+
+        print(queue)
 
     return None
 
@@ -584,8 +594,10 @@ def saveCoords(robot_id):
             ret = closestUnexploredNode(newNode, [], serverVars.currentDirection[robot_id])
 
             if ret is not None:
-                cmdList, currDir = ret
+                currNode, cmdList, currDir = ret
                 serverVars.currentDirection[robot_id] = currDir
+                serverVars.currentNode[robot_id] = currNode
+                serverVars.currentCoords[robot_id] = (currNode.x, currNode.y)
                 return  {"response": cmdList}
             else:
                 # error can't find nearest node
