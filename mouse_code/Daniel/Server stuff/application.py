@@ -19,6 +19,7 @@ class RFDirectionCommands:
     FORWARD = 1
     LEFT = 2
     RIGHT = 3
+    LEFTLEFT = 4
 
 # Intersection Type Constants
 class ImageIntersectionTypes:
@@ -351,6 +352,51 @@ def start(robot_id):
     return {"response": RFDirectionCommands.FORWARD} # always start by moving forward
 
 
+def closestUnexploredNode(node, commandList, dir):
+
+    queue = [(node, commandList, dir)]
+
+    while queue:
+        curr, cmdList, currDir = queue.pop()
+        # if curr is None:
+        #     return None
+        if curr.fullyExplored() == False:
+            return (cmdList, currDir)
+        
+        # try left
+        newDir = (3 + currDir) % 4
+        if curr.directions[newDir] is not None and curr.type[newDir] == 1:
+            cmdList.append(RFDirectionCommands.LEFT)
+
+            queue.append((curr.directions[newDir], cmdList, newDir))
+        
+        # try right
+        newDir = (1 + currDir) % 4
+        if curr.directions[newDir] is not None and curr.type[newDir] == 1:
+            cmdList.append(RFDirectionCommands.RIGHT)
+
+            queue.append((curr.directions[newDir], cmdList, newDir))
+        
+        # try forward
+        newDir = currDir
+        if curr.directions[newDir] is not None and curr.type[newDir] == 1:
+            cmdList.append(RFDirectionCommands.FORWARD)
+
+            queue.append((curr.directions[newDir], cmdList, newDir))
+
+        # try back
+        newDir = (2 + currDir) % 4
+        if curr.directions[newDir] is not None and curr.type[newDir] == 1:
+            if curr.type[(3 + currDir) % 4] == 1:
+                # if it has a left do a leftleft
+                cmdList.append(RFDirectionCommands.LEFTLEFT)
+            else:
+                cmdList.append(RFDirectionCommands.LEFT)
+            
+            queue.append(curr.directions[newDir], cmdList, newDir)
+
+    return None
+
 @application.route("/coords/<robot_id>", methods = ['POST'])
 def saveCoords(robot_id):
     # get coords in JSON format; all coords in cm
@@ -514,11 +560,12 @@ def saveCoords(robot_id):
 
     # Decision making here
     if newNode.fullyExplored():
-        # try left
-        dir = (3 + direction) % 4
-        if newNode.directions[dir] is not None:
+        # check if its an deadend
+        if newNode.type == IntersectionTypes.END or newNode.type == IntersectionTypes.LEFT_END or newNode.type == IntersectionTypes.RIGHT_END or newNode.type == IntersectionTypes.REVERSE_END:
             retDirection = RFDirectionCommands.LEFT
+            dir = (direction + 2) % 4
             serverVars.currentDirection[robot_id] = dir
+            serverVars.currentNode[robot_id] = newNode.directions[(dir)]
             (x,y) = serverVars.currentCoords[robot_id]
             if dir == NORTH:
                 serverVars.currentCoords[robot_id] = (x, y+1)
@@ -529,55 +576,17 @@ def saveCoords(robot_id):
             elif dir == WEST:
                 serverVars.currentCoords[robot_id] = (x-1, y)
         else:
-            # try right
-            dir = (1 + direction) % 4
-            if newNode.directions[dir] is not None:
-                retDirection = RFDirectionCommands.RIGHT
-                serverVars.currentDirection[robot_id] = dir
-                (x,y) = serverVars.currentCoords[robot_id]
-                if dir == NORTH:
-                    serverVars.currentCoords[robot_id] = (x, y+1)
-                elif dir == EAST:
-                    serverVars.currentCoords[robot_id] = (x+1, y)
-                elif dir == SOUTH:
-                    serverVars.currentCoords[robot_id] = (x, y-1)
-                elif dir == WEST:
-                    serverVars.currentCoords[robot_id] = (x-1, y)
+            # look for the nearest node with unexplored branch
+            ret = closestUnexploredNode(newNode, [], serverVars.currentDirection[robot_id])
+
+            if ret is not None:
+                cmdList, currDir = ret
+                serverVars.currentDirection[robot_id] = currDir
+                return  {"response": cmdList}
             else:
-                # try forward
-                dir = direction
-                if newNode.directions[dir] is not None:
-                    retDirection = RFDirectionCommands.FORWARD
-                    serverVars.currentDirection[robot_id] = dir
-                    (x,y) = serverVars.currentCoords[robot_id]
-                    if dir == NORTH:
-                        serverVars.currentCoords[robot_id] = (x, y+1)
-                    elif dir == EAST:
-                        serverVars.currentCoords[robot_id] = (x+1, y)
-                    elif dir == SOUTH:
-                        serverVars.currentCoords[robot_id] = (x, y-1)
-                    elif dir == WEST:
-                        serverVars.currentCoords[robot_id] = (x-1, y)
-                else:
-                    # Could be very bad or could be deadend
-
-
-                    # check if its an deadend
-                    if newNode.type == IntersectionTypes.END or newNode.type == IntersectionTypes.LEFT_END or newNode.type == IntersectionTypes.RIGHT_END or newNode.type == IntersectionTypes.REVERSE_END:
-                        retDirection = RFDirectionCommands.LEFT
-                        dir = (direction + 2) % 4
-                        serverVars.currentDirection[robot_id] = dir
-                        serverVars.currentNode[robot_id] = newNode.directions[(dir)]
-                        (x,y) = serverVars.currentCoords[robot_id]
-                        if dir == NORTH:
-                            serverVars.currentCoords[robot_id] = (x, y+1)
-                        elif dir == EAST:
-                            serverVars.currentCoords[robot_id] = (x+1, y)
-                        elif dir == SOUTH:
-                            serverVars.currentCoords[robot_id] = (x, y-1)
-                        elif dir == WEST:
-                            serverVars.currentCoords[robot_id] = (x-1, y)
-                        
+                # error can't find nearest node
+                print("error finding nearest node")
+                return {"response": "error"}
 
     else:
         dir = (3 + direction) % 4
@@ -632,7 +641,7 @@ def saveCoords(robot_id):
                     retDirection = RFDirectionCommands.LEFT
                     dir = (direction + 2) % 4
                     serverVars.currentDirection[robot_id] = dir
-                    currentNode[robot_id] = newNode.directions[(dir)]
+                    serverVars.currentNode[robot_id] = newNode.directions[(dir)]
                     (x,y) = serverVars.currentCoords[robot_id]
                     if dir == NORTH:
                         serverVars.currentCoords[robot_id] = (x, y+1)
