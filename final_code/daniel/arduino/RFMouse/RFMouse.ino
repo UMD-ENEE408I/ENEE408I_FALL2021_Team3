@@ -68,7 +68,7 @@ void loop() {
     if (receive_packet.command == 0){
       stop_move();
     }else if (receive_packet.command == 1){
-      command_forward(0.15);
+      command_forward((double) ((double) receive_packet.distance)/100);
     }else if (receive_packet.command == 2){
       command_left_pid();
     }else if (receive_packet.command == 3){
