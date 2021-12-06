@@ -26,6 +26,8 @@ Encoder enc2(M2_ENCA, M2_ENCB);
 int adc1_buf[8];
 int adc2_buf[8];
 bool arr[16];
+int numLitRight = 0;
+int numLitLeft = 0;
 
 const unsigned int BUF_THRESHOLD = 560; //for G: 560, for C: 600, for D: 710
 //float distTune = 135/145; //for G: , for C: 135/145, for D: 15/16
@@ -98,6 +100,19 @@ void stop_move() {
   M2_stop();
 }
 
+//count number of lit right sensors and lit left sensors
+void countArr(){
+  numLitRight = 0;
+  numLitLeft = 0;
+  for (int i = 0; i<=5; i++){
+    if (arr[i] == true)
+      numLitRight++;
+  }
+  for (int i = 7; i<=12; i++){
+    if (arr[i] == true)
+      numLitLeft++;
+  }
+}
 
 void command_right_pid(){
   targetVel = 0.1;
@@ -332,12 +347,13 @@ void command_forward(double dist){ //move forward by specified distance (in m)
   //long commandCurTime = commandStartTime;
   //long commandDeltaTime = dist*1.0e6/targetVel*1.1; //idk why this needs the additional scaling factor but it works
   int completedForward = 0;
+  int adjustmentCount = 0;
   prevReadM1 = enc1.read();
   prevReadM2 = -1*enc2.read();
   targetReadM1 = prevReadM1;
   targetReadM2 = prevReadM2;
-  float targetFinalReadM1 = dist/(0.032*M_PI)*360*30/33+prevReadM1; //multiply by G: 30/33, C and D: 15/16 to adjust for miscalculation
-  float targetFinalReadM2 = dist/(0.032*M_PI)*360*30/33+prevReadM2; //multiply by G: 30/33, C and D: 15/16 to adjust for miscalculation
+  float targetFinalReadM1 = dist/(0.032*M_PI)*360*15/16+prevReadM1; //multiply by G: 30/33, C and D: 15/16 to adjust for miscalculation
+  float targetFinalReadM2 = dist/(0.032*M_PI)*360*15/16+prevReadM2; //multiply by G: 30/33, C and D: 15/16 to adjust for miscalculation
   prevTime = micros();
   while (!completedForward){  //PID loop
     long curTime = micros(); //time since Arduino started in microseconds
@@ -427,12 +443,23 @@ void command_forward(double dist){ //move forward by specified distance (in m)
     Serial.println();
   
     //stopFlag = 0; //reset flag before checking light bar
-    if (arr[5] == true || arr[4] == true || arr[3] == true || arr[2] == true || arr[1] == true || arr[0] == true){ //too far to the right --> turn left
+    countArr();
+    if ((arr[5] == true || arr[4] == true || arr[3] == true || arr[2] == true || arr[1] == true || arr[0] == true) && numLitRight <= 3){ //too far to the right --> turn left (numLitRight<=2 for not a right corner) && numLitRight <= 2
       M1_PWM += 10;
       M2_PWM -= 10;
-    } else if (arr[7] == true || arr[8] == true || arr[9] == true || arr[10] == true || arr[11] == true || arr[12] == true){ //too far to the left --> turn right
+      adjustmentCount++;
+      if(adjustmentCount == 10){
+        targetFinalReadM1 += 1;
+        adjustmentCount = 0;
+      }
+    } else if ((arr[7] == true || arr[8] == true || arr[9] == true || arr[10] == true || arr[11] == true || arr[12] == true) && numLitLeft <= 3){ //too far to the left --> turn right (numLitLeft<=2 for not a left corner)  && numLitLeft <= 2
       M2_PWM += 10;
       M1_PWM -= 10;
+      adjustmentCount++;
+      if(adjustmentCount == 10){
+        targetFinalReadM2 += 1;
+        adjustmentCount = 0;
+      }
     } /*else if (!(arr[0] || arr[1] || arr[2] || arr[3] || arr[4] || arr[5] || arr[6] || arr[7] || arr[8] || arr[9] || arr[10] || arr[11] || arr[12])){ //stop if can't see line
       M1_PWM = 0;
       M2_PWM = 0;

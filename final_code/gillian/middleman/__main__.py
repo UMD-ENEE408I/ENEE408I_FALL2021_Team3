@@ -7,7 +7,7 @@ import time
 if __name__ == '__main__':
     vid = cam.initialize()
 
-    rfJetson = RFJetson("COM13")
+    rfJetson = RFJetson("COM11")
 
     time.sleep(5)
 
