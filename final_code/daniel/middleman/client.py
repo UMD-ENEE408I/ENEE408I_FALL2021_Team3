@@ -39,8 +39,11 @@ def sendCoords(nodeType):
 
     x = requests.post(LINK + "/coords/" + str(ROBOT_ID), data={"type": nodeType})
     print(x.json()) # should be direction command
+
+    
     
     if "response" in x.json():
-        return int(x.json()["response"])
+        cmdList = list(x.json()["response"])
+        return [int(cmdList[i]) for i in range(len(cmdList))]
     else:
         return None

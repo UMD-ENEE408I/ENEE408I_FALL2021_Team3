@@ -501,7 +501,7 @@ def saveCoords(robot_id):
         elif direction == WEST:
             serverVars.currentCoords[robot_id] = (x-1, y)
         
-        return {"response": RFDirectionCommands.FORWARD}
+        return {"response": [RFDirectionCommands.FORWARD]}
 
     # create new node
     newNode = createNode(nodex, nodey, nodeType)
@@ -653,7 +653,7 @@ def saveCoords(robot_id):
                         serverVars.currentCoords[robot_id] = (x-1, y)
     
     # Return a direction command
-    return {"response": retDirection}
+    return {"response": [retDirection]}
 
 @application.route("/clear")
 def clearData():
