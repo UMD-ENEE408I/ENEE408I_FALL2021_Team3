@@ -347,6 +347,118 @@ void command_left_pid(){
   stop_move();
 }
 
+void command_left_end(){
+  targetVel = 0.1;
+  int passedIR5 = 0; //flag
+  completedTurnL = 0; //flag
+  prevReadM1 = -1*enc1.read();
+  prevReadM2 = -1*enc2.read();
+  int initialReadM2 = prevReadM2; //M2 encoder(0)
+  targetReadM1 = prevReadM1;
+  targetReadM2 = prevReadM2;
+  prevTime = micros();
+  int ogComTime = prevTime;
+  while (completedTurnL == 0){
+    long curTime = micros(); //time since Arduino started in microseconds
+    int curReadM1 = -1*enc1.read();
+    int curReadM2 = -1*enc2.read();
+    float deltaTime = ((float) (curTime - prevTime))/1.0e6; //delta T [s]
+    targetDeltaRead = targetVel*deltaTime/(0.032*M_PI)*360; //target change in encoder position for desired velocity [counts]
+    targetReadM1 = targetReadM1 + targetDeltaRead; //target encoder position based on desired vel [counts]
+    targetReadM2 = targetReadM2 + targetDeltaRead;
+    //if the stop flag is high, the targetRead won't change from the previous
+    prevTime = curTime;
+
+    float KpM1 = 0.2;
+    float KiM1 = 0.05;
+    float KdM1 = 0.1;
+  
+    float KpM2 = 0.2;
+    float KiM2 = 0.05;
+    float KdM2 = 0.1;
+
+    errorM1 = targetReadM1 - curReadM1;
+    if (errorM1 > errorLimit)
+      errorM1 = errorLimit;
+    integralM1 = integralM1 + errorM1*deltaTime;
+    derivM1 = (errorM1 - prevErrorM1)/deltaTime;
+  
+    errorM2 = targetReadM2 - curReadM2; //negate for backwards
+    if (errorM2 > errorLimit)
+      errorM2 = errorLimit;
+    integralM2 = integralM2 + errorM2*deltaTime;
+    derivM2 = (errorM2 - prevErrorM2)/deltaTime;
+  
+    //corrected control signals u(t)
+    float uM1 = 0;
+    float uM2 = 0;
+    if (stopFlag == 0){  //only have nonzero signal if previous time didn't have stopped motors
+      uM1 = KpM1*errorM1 + KiM1*integralM1 + KdM1*derivM1;
+      uM2 = KpM2*errorM2 + KiM2*integralM2 + KdM2*derivM2;
+    }
+    
+    //update stored error value
+    prevErrorM1 = errorM1;
+    prevErrorM2 = errorM2;
+  
+    //adjust PWM on M1
+    M1_PWM = uM1;
+    if (M1_PWM > 255)
+      M1_PWM = 255;
+    else if (M1_PWM < 0)
+      M1_PWM = 0;
+  
+    //adjust PWM on M2
+    M2_PWM = uM2;
+    if (M2_PWM > 255)
+      M2_PWM = 255;
+    else if (M2_PWM < 0)
+      M2_PWM = 0;
+  
+    //follow the line
+    int t_start = micros();
+    for (int i = 0; i < 8; i++) {
+      adc1_buf[i] = adc1.readADC(i);
+      adc2_buf[i] = adc2.readADC(i);
+    }
+    int t_end = micros();
+  
+    int count = 0;
+    for (int i = 0; i < 8; i++) {
+      if (adc1_buf[i] < BUF_THRESHOLD) {
+        arr[count] = true;
+        //Serial.print("AH"); Serial.print("\t");
+      } else {
+        arr[count] = false;
+        //Serial.print("--"); Serial.print("\t");
+      }
+      count = count + 1;
+  
+      if (adc2_buf[i] < BUF_THRESHOLD) {
+        arr[count] = true;
+        //Serial.print("AH"); Serial.print("\t");
+      } else {
+        arr[count] = false;
+        //Serial.print("--"); Serial.print("\t");
+      }
+      count = count + 1;
+    }
+    //Serial.println();
+    M1_backward(M1_PWM);
+    M2_forward(M2_PWM);
+    delay(10);
+    
+    long checkBarTime = micros(); //time at which IR sensors were checked
+    if (arr[6] == true && passedIR5 == 0){
+      passedIR5 = 1;
+    } else if (arr[6] == true && (checkBarTime - ogComTime > 1000000)){  //if turn has executed for >1s, check if centered on straight path to ensure it's past any forward paths
+      completedTurnL = 1;
+      //Serial.println("centered");
+    }
+  }
+  stop_move();
+}
+
 void command_forward(double dist){ //move forward by specified distance (in m)
   //Serial.print("command_forward dist: ");
   //Serial.println(dist);
