@@ -11,7 +11,7 @@ uint8_t magic_serial_header[3] = {0x8B, 0xEA, 0x27};
 
 uint8_t mouse_address[] = "mouseN";
 uint8_t jetson_address[] = "jetNN";
-uint8_t channel = 42; // (0-127) each team should use a different channel(s)
+uint8_t channel = 99; // (0-127) each team should use a different channel(s)
 
 // Max possible size is 32 bytes (this packet is 32 bytes)
 typedef struct packet {

@@ -98,7 +98,6 @@ def createNode(x,y, type):
 def mazeFullyExplored():
     for node in serverVars.nodeDict.values():
         if not node.fullyExplored():
-            break
             return False
     
     return True
@@ -347,10 +346,15 @@ def start(robot_id):
 
     serverVars.currentNode[robot_id] = startNode
     serverVars.currentDirection[robot_id] = dir
-    serverVars.currentCoords[robot_id] = (x, y+1)
 
+
+    serverVars.currentCoords[robot_id] = (x, y+2)
+    print("coords", serverVars.currentCoords[robot_id])
     return {"response": RFDirectionCommands.FORWARD} # always start by moving forward
 
+
+def manhattanDistance(x1,y1,x2,y2):
+    return abs(x2-x1) + abs(y2-y1)
 
 def closestUnexploredNode(node, commandList, dir):
 
@@ -372,6 +376,11 @@ def closestUnexploredNode(node, commandList, dir):
             cmdListCpy = [i for i in cmdList]
             cmdListCpy.append(RFDirectionCommands.LEFT)
 
+            mDist = manhattanDistance(curr.x, curr.y, curr.directions[newDir].x, curr.directions[newDir].y)
+
+            while mDist > 1:
+                cmdListCpy.append(RFDirectionCommands.FORWARD)
+                mDist -= 1
             print(cmdListCpy)
 
             queue.append((curr.directions[newDir], cmdListCpy, newDir))
@@ -383,6 +392,12 @@ def closestUnexploredNode(node, commandList, dir):
             cmdListCpy = [i for i in cmdList]
             cmdListCpy.append(RFDirectionCommands.RIGHT)
 
+            mDist = manhattanDistance(curr.x, curr.y, curr.directions[newDir].x, curr.directions[newDir].y)
+
+            while mDist > 1:
+                cmdListCpy.append(RFDirectionCommands.FORWARD)
+                mDist -= 1
+
             queue.append((curr.directions[newDir], cmdListCpy, newDir))
         
         # try forward
@@ -392,20 +407,37 @@ def closestUnexploredNode(node, commandList, dir):
             cmdListCpy = [i for i in cmdList]
             cmdListCpy.append(RFDirectionCommands.FORWARD)
 
+            mDist = manhattanDistance(curr.x, curr.y, curr.directions[newDir].x, curr.directions[newDir].y)
+
+            while mDist > 1:
+                cmdListCpy.append(RFDirectionCommands.FORWARD)
+                mDist -= 1
+
             queue.append((curr.directions[newDir], cmdListCpy, newDir))
 
         # try back
-        newDir = (2 + currDir) % 4
-        if curr.directions[newDir] is not None and curr.type[newDir] == 1:
-            print("back")
-            cmdListCpy = [i for i in cmdList]
-            if curr.type[(3 + currDir) % 4] == 1:
-                # if it has a left do a leftleft
-                cmdListCpy.append(RFDirectionCommands.LEFTLEFT)
-            else:
-                cmdListCpy.append(RFDirectionCommands.LEFT)
+        # newDir = (2 + currDir) % 4
+        # if curr.directions[newDir] is not None and curr.type[newDir] == 1:
+        #     print("back")
+        #     cmdListCpy = [i for i in cmdList]
+        #     if curr.type[(3 + currDir) % 4] == 1:
+        #         # if it has a left do a leftleft
+        #         cmdListCpy.append(RFDirectionCommands.LEFTLEFT)
+                
+        #         mDist = manhattanDistance(curr.x, curr.y, curr.directions[newDir].x, curr.directions[newDir].y)
+
+        #         while mDist > 1:
+        #             cmdListCpy.append(RFDirectionCommands.FORWARD)
+        #             mDist -= 1
+        #     else:
+        #         cmdListCpy.append(RFDirectionCommands.LEFT)
+        #         mDist = manhattanDistance(curr.x, curr.y, curr.directions[newDir].x, curr.directions[newDir].y)
+
+        #         while mDist > 1:
+        #             cmdListCpy.append(RFDirectionCommands.FORWARD)
+        #             mDist -= 1
             
-            queue.append((curr.directions[newDir], cmdListCpy, newDir))
+        #     queue.append((curr.directions[newDir], cmdListCpy, newDir))
 
         print(queue)
 
@@ -427,6 +459,10 @@ def saveCoords(robot_id):
 
     nodeType = None
 
+    if mazeFullyExplored():
+        print("fully explored")
+        return {"response": [RFDirectionCommands.STOP]}
+
     if direction == NORTH:
         if type == ImageIntersectionTypes.CROSS:
             nodeType = IntersectionTypes.CROSS
@@ -444,8 +480,10 @@ def saveCoords(robot_id):
             nodeType = IntersectionTypes.END
         elif type == ImageIntersectionTypes.LINE:
             type = IntersectionTypes.LINE
+        elif type == ImageIntersectionTypes.MAZE_END:
+            nodeType = IntersectionTypes.END
         else:
-            type = IntersectionTypes.ERROR
+            nodeType = IntersectionTypes.ERROR
     elif direction == EAST:
         if type == ImageIntersectionTypes.CROSS:
             nodeType = IntersectionTypes.CROSS
@@ -463,8 +501,10 @@ def saveCoords(robot_id):
             nodeType = IntersectionTypes.LEFT_END
         elif type == ImageIntersectionTypes.LINE:
             type = IntersectionTypes.LINE
+        elif type == ImageIntersectionTypes.MAZE_END:
+            nodeType = IntersectionTypes.LEFT_END
         else:
-            type = IntersectionTypes.ERROR
+            nodeType = IntersectionTypes.ERROR
     elif direction == SOUTH:
         if type == ImageIntersectionTypes.CROSS:
             nodeType = IntersectionTypes.CROSS
@@ -482,6 +522,8 @@ def saveCoords(robot_id):
             nodeType = IntersectionTypes.REVERSE_END
         elif type == ImageIntersectionTypes.LINE:
             type = IntersectionTypes.LINE
+        elif type == ImageIntersectionTypes.MAZE_END:
+            nodeType = IntersectionTypes.REVERSE_END
         else:
             type = IntersectionTypes.ERROR
     elif direction == WEST:
@@ -501,8 +543,10 @@ def saveCoords(robot_id):
             nodeType = IntersectionTypes.RIGHT_END
         elif type == ImageIntersectionTypes.LINE:
             type = IntersectionTypes.LINE
+        elif type == ImageIntersectionTypes.MAZE_END:
+            nodeType = IntersectionTypes.RIGHT_END
         else:
-            type = IntersectionTypes.ERROR
+            tynodeTypepe = IntersectionTypes.ERROR
 
     if type == IntersectionTypes.LINE:
         (x,y) = serverVars.currentCoords[robot_id]
@@ -514,6 +558,8 @@ def saveCoords(robot_id):
             serverVars.currentCoords[robot_id] = (x, y-1)
         elif direction == WEST:
             serverVars.currentCoords[robot_id] = (x-1, y)
+        
+        print("coords", serverVars.currentCoords[robot_id])
         
         return {"response": [RFDirectionCommands.FORWARD]}
 
@@ -568,10 +614,15 @@ def saveCoords(robot_id):
             print(serverVars.currentNode[robot_id].x)
             print(serverVars.currentNode[robot_id].y)
             print(serverVars.currentNode[robot_id].type)
+
+            
         else:
             #something went wrong didnt go WEST
             print("error didnt go west")
 
+    print(serverVars.currentNode[robot_id].x)
+    print(serverVars.currentNode[robot_id].y)
+    print(serverVars.currentNode[robot_id].type)
     # Decision making here
     if newNode.fullyExplored():
         # check if its an deadend
@@ -598,6 +649,7 @@ def saveCoords(robot_id):
                 serverVars.currentDirection[robot_id] = currDir
                 serverVars.currentNode[robot_id] = currNode
                 serverVars.currentCoords[robot_id] = (currNode.x, currNode.y)
+                print("coords", serverVars.currentCoords[robot_id])
                 return  {"response": cmdList}
             else:
                 # error can't find nearest node
@@ -669,6 +721,7 @@ def saveCoords(robot_id):
                         serverVars.currentCoords[robot_id] = (x-1, y)
     
     # Return a direction command
+    print("coords",serverVars.currentCoords[robot_id])
     return {"response": [retDirection]}
 
 @application.route("/clear")

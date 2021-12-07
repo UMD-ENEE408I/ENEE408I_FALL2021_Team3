@@ -7,7 +7,7 @@ import time
 if __name__ == '__main__':
     vid = cam.initialize()
 
-    rfJetson = RFJetson("COM11")
+    rfJetson = RFJetson("/dev/cu.usbserial-1440")
 
     time.sleep(1)
 
@@ -62,7 +62,7 @@ if __name__ == '__main__':
                         print("sending again")
                         mouseResp = rfJetson.send(1, 15)
                     print("mouse responded")
-                    time.sleep(.5)
+                    time.sleep(1)
                 mouseResp = rfJetson.send(cmd, intersectDist)
                 while mouseResp[0] < 100:
                     print("bad response; waiting 5 seconds")

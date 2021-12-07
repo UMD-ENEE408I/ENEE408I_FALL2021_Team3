@@ -6,7 +6,7 @@ import math
 # from PIL import Image
 
 def initialize():
-    vid = cv2.VideoCapture(0)
+    vid = cv2.VideoCapture(1)
     return vid
 
 def close(vid):
@@ -64,8 +64,8 @@ def intersect(vid):
         gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)                 # convert cropped image to grayscale
         og_gray = cv2.cvtColor(og_img,cv2.COLOR_BGR2GRAY)
         edges = cv2.Canny(gray,200,255)                             # edge detection with Canny
-        cv2.imwrite('edges.jpg',edges)                              # write edges to image
-        lines = cv2.HoughLines(edges,1,np.pi/180,20)                # detect lines
+        # cv2.imwrite('edges.jpg',edges)                              # write edges to image
+        lines = cv2.HoughLines(edges,1,np.pi/180,10)                # detect lines
 
         if lines is not None:
             # for line in lines:
@@ -309,7 +309,7 @@ def intersect(vid):
                 downL = 0
                 downR = 0
 
-                threshold = 215
+                threshold = 240
 
                 # Check left of center
                 leftX = centerX - 90
@@ -394,6 +394,8 @@ def intersect(vid):
                 # cv2.imwrite('samplePoints.jpg',img)
                 cv2.imwrite('og_samplePoints.jpg',og_img)
                 cv2.imshow('og_samplePoints',og_img)
+                cv2.imwrite('edges.jpg',edges)
+                cv2.imshow('edges',edges)
                 print("left, right, up, down: ", left, ", ", right, ", ", up, ", ", down)
 
 
