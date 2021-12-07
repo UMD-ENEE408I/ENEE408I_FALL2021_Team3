@@ -19,7 +19,9 @@ class RFDirectionCommands:
     FORWARD = 1
     LEFT = 2
     RIGHT = 3
-    LEFTLEFT = 4
+    MAZE_END_LEFTLEFT = 4
+    MAZE_END_LEFT = 5
+    MAZE_END_RIGHT = 6
 
 # Intersection Type Constants
 class ImageIntersectionTypes:
@@ -620,11 +622,48 @@ def saveCoords(robot_id):
             #something went wrong didnt go WEST
             print("error didnt go west")
 
-    print(serverVars.currentNode[robot_id].x)
-    print(serverVars.currentNode[robot_id].y)
-    print(serverVars.currentNode[robot_id].type)
+    # Maze End Decision making here
+    if type == ImageIntersectionTypes.MAZE_END:
+        # check if mode than 1 away from node
+        if manhattanDistance(serverVars.currentNode[robot_id].x, serverVars.currentNode[robot_id].y, newNode.directions[(direction + 2)%4].x, newNode.directions[(direction+2)%4].y) > 1:
+            
+            serverVars.currentDirection[robot_id] = (direction + 2) % 4
+            (x,y) = serverVars.currentCoords[robot_id]
+            if serverVars.currentDirection[robot_id] == NORTH:
+                serverVars.currentCoords[robot_id] = (x, y+2)
+            elif serverVars.currentDirection[robot_id] == EAST:
+                serverVars.currentCoords[robot_id] = (x+2, y)
+            elif serverVars.currentDirection[robot_id] == SOUTH:
+                serverVars.currentCoords[robot_id] = (x, y-2)
+            elif serverVars.currentDirection[robot_id] == WEST:
+                serverVars.currentCoords[robot_id] = (x-2, y)
+            return {"response": [RFDirectionCommands.MAZE_END_LEFT]}
+
+        dir = (direction + 2) % 4
+        serverVars.currentDirection[robot_id] = dir
+        serverVars.currentNode[robot_id] = newNode.directions[dir]
+
+        print("HERERERE")
+        print(dir)
+        print(serverVars.currentNode[robot_id].x)
+        print(serverVars.currentNode[robot_id].y)
+
+
+        # (x,y) = serverVars.currentCoords[robot_id]
+        # if dir == NORTH:
+        #     serverVars.currentCoords[robot_id] = (x, y+1)
+        # elif dir == EAST:
+        #     serverVars.currentCoords[robot_id] = (x+1, y)
+        # elif dir == SOUTH:
+        #     serverVars.currentCoords[robot_id] = (x, y-1)
+        # elif dir == WEST:
+        #     serverVars.currentCoords[robot_id] = (x-1, y)
+        
+        newNode = serverVars.currentNode[robot_id]
+
     # Decision making here
     if newNode.fullyExplored():
+        print("JBFKJHAKFJHKFJH")
         # check if its an deadend
         if newNode.type == IntersectionTypes.END or newNode.type == IntersectionTypes.LEFT_END or newNode.type == IntersectionTypes.RIGHT_END or newNode.type == IntersectionTypes.REVERSE_END:
             retDirection = RFDirectionCommands.LEFT
@@ -642,6 +681,8 @@ def saveCoords(robot_id):
                 serverVars.currentCoords[robot_id] = (x-1, y)
         else:
             # look for the nearest node with unexplored branch
+            if type == ImageIntersectionTypes.MAZE_END:
+                serverVars.currentDirection[robot_id] = (serverVars.currentDirection[robot_id] + 2) % 4
             ret = closestUnexploredNode(newNode, [], serverVars.currentDirection[robot_id])
 
             if ret is not None:
@@ -650,6 +691,18 @@ def saveCoords(robot_id):
                 serverVars.currentNode[robot_id] = currNode
                 serverVars.currentCoords[robot_id] = (currNode.x, currNode.y)
                 print("coords", serverVars.currentCoords[robot_id])
+
+                if type == ImageIntersectionTypes.MAZE_END:
+                    if len(cmdList) > 1:
+                        if cmdList[0] == RFDirectionCommands.LEFT:
+                            newCmdList = [RFDirectionCommands.MAZE_END_LEFT]
+                            for i in range(1, len(cmdList)):
+                                newCmdList.append(cmdList[i])
+                        elif cmdList == RFDirectionCommands.RIGHT:
+                            newCmdList = [RFDirectionCommands.MAZE_END_LEFT]
+                            for i in range(1, len(cmdList)):
+                                newCmdList.append(cmdList[i])
+                        return {"response": newCmdList}
                 return  {"response": cmdList}
             else:
                 # error can't find nearest node
@@ -720,6 +773,18 @@ def saveCoords(robot_id):
                     elif dir == WEST:
                         serverVars.currentCoords[robot_id] = (x-1, y)
     
+
+    if type == ImageIntersectionTypes.MAZE_END:
+        if retDirection == RFDirectionCommands.LEFT:
+            retDirection = RFDirectionCommands.MAZE_END_RIGHT
+        elif retDirection == RFDirectionCommands.RIGHT:
+            retDirection = RFDirectionCommands.MAZE_END_LEFT
+        elif retDirection == RFDirectionCommands.FORWARD:
+            retDirection = RFDirectionCommands.MAZE_END_LEFTLEFT
+        else:
+            print("error")
+            return {"response": "error"}
+
     # Return a direction command
     print("coords",serverVars.currentCoords[robot_id])
     return {"response": [retDirection]}

@@ -54,21 +54,59 @@ if __name__ == '__main__':
         if resp is not None:
 
             for cmd in resp:
-                if cmd == 2 or cmd == 3: #left or right
-                    mouseResp = rfJetson.send(1, intersectDist)
+                if cmd == 5:
+                    mouseResp = rfJetson.send(2, 15)
                     while mouseResp[0] < 100:
                         print("bad response; waiting 5 seconds")
                         time.sleep(5)
                         print("sending again")
-                        mouseResp = rfJetson.send(1, 15)
-                    print("mouse responded")
+                        mouseResp = rfJetson.send(2, 15)
+                elif cmd == 6:
+                    mouseResp = rfJetson.send(3, 15)
+                    while mouseResp[0] < 100:
+                        print("bad response; waiting 5 seconds")
+                        time.sleep(5)
+                        print("sending again")
+                        mouseResp = rfJetson.send(3, 15)
+                elif cmd == 4:
+                    mouseResp = rfJetson.send(2, 15)
+                    while mouseResp[0] < 100:
+                        print("bad response; waiting 5 seconds")
+                        time.sleep(5)
+                        print("sending again")
+                        mouseResp = rfJetson.send(2, 15)
                     time.sleep(1)
-                mouseResp = rfJetson.send(cmd, intersectDist)
-                while mouseResp[0] < 100:
-                    print("bad response; waiting 5 seconds")
-                    time.sleep(5)
-                    print("sending again")
-                    mouseResp = rfJetson.send(cmd, 15)
+                    mouseResp = rfJetson.send(2,15)
+                else:
+                    if cmd == 2 or cmd == 3: #left or right
+                        try:
+                            (intersectType, dist) = cam.intersect(vid)
+                            if intersectType == 0:
+                                dist = 15
+                        except:
+                            dist = 15
+                        mouseResp = rfJetson.send(1, dist)
+                        while mouseResp[0] < 100:
+                            print("bad response; waiting 5 seconds")
+                            time.sleep(5)
+                            print("sending again")
+                            mouseResp = rfJetson.send(1, dist)
+                        print("mouse responded")
+                        time.sleep(1)
+                    try:
+                        (intersectType, dist) = cam.intersect(vid)
+                        print("DISTANCE", dist)
+                        if intersectType == 0:
+                            dist = 15
+                    except:
+                        dist = 15
+                    mouseResp = rfJetson.send(cmd, dist)
+                    while mouseResp[0] < 100:
+                        print("bad response; waiting 5 seconds")
+                        time.sleep(5)
+                        print("sending again")
+                        mouseResp = rfJetson.send(cmd, dist)
+                        time.sleep(1)
                 time.sleep(1)
         
         # time.sleep(.5)
