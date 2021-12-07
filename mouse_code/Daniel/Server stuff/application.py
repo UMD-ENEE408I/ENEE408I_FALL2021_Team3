@@ -63,8 +63,7 @@ class serverVars:
     nodeDict = {}
     startNode = None
     mazeDimension = 20
-
-mazeExit = (10,10)
+    mazeExit = (10,10)
 
 class Node:
     def __init__(self, x, y, type):
@@ -358,6 +357,93 @@ def start(robot_id):
 def manhattanDistance(x1,y1,x2,y2):
     return abs(x2-x1) + abs(y2-y1)
 
+def findExit(node, commandList, dir):
+
+    queue = [(node, commandList, dir)]
+
+    while len(queue) > 0:
+        curr, cmdList, currDir = queue.pop(0)
+        print("popped")
+        # if curr is None:
+        #     return None
+        if curr.x == serverVars.mazeExit[0] and curr.y == serverVars.mazeExit[1]:
+            print("hereahhhh" ,cmdList)
+            return (curr, cmdList, currDir)
+        
+        # try left
+        newDir = (3 + currDir) % 4
+        if curr.directions[newDir] is not None and curr.type[newDir] == 1:
+            print("left")
+            cmdListCpy = [i for i in cmdList]
+            cmdListCpy.append(RFDirectionCommands.LEFT)
+
+            mDist = manhattanDistance(curr.x, curr.y, curr.directions[newDir].x, curr.directions[newDir].y)
+
+            while mDist > 1:
+                cmdListCpy.append(RFDirectionCommands.FORWARD)
+                mDist -= 1
+            print(cmdListCpy)
+
+            queue.append((curr.directions[newDir], cmdListCpy, newDir))
+        
+        # try right
+        newDir = (1 + currDir) % 4
+        if curr.directions[newDir] is not None and curr.type[newDir] == 1:
+            print("right")
+            cmdListCpy = [i for i in cmdList]
+            cmdListCpy.append(RFDirectionCommands.RIGHT)
+
+            mDist = manhattanDistance(curr.x, curr.y, curr.directions[newDir].x, curr.directions[newDir].y)
+
+            while mDist > 1:
+                cmdListCpy.append(RFDirectionCommands.FORWARD)
+                mDist -= 1
+
+            queue.append((curr.directions[newDir], cmdListCpy, newDir))
+        
+        # try forward
+        newDir = currDir
+        if curr.directions[newDir] is not None and curr.type[newDir] == 1:
+            print("forward")
+            cmdListCpy = [i for i in cmdList]
+            cmdListCpy.append(RFDirectionCommands.FORWARD)
+
+            mDist = manhattanDistance(curr.x, curr.y, curr.directions[newDir].x, curr.directions[newDir].y)
+
+            while mDist > 1:
+                cmdListCpy.append(RFDirectionCommands.FORWARD)
+                mDist -= 1
+
+            queue.append((curr.directions[newDir], cmdListCpy, newDir))
+
+        # try back
+        # newDir = (2 + currDir) % 4
+        # if curr.directions[newDir] is not None and curr.type[newDir] == 1:
+        #     print("back")
+        #     cmdListCpy = [i for i in cmdList]
+        #     if curr.type[(3 + currDir) % 4] == 1:
+        #         # if it has a left do a leftleft
+        #         cmdListCpy.append(RFDirectionCommands.LEFTLEFT)
+                
+        #         mDist = manhattanDistance(curr.x, curr.y, curr.directions[newDir].x, curr.directions[newDir].y)
+
+        #         while mDist > 1:
+        #             cmdListCpy.append(RFDirectionCommands.FORWARD)
+        #             mDist -= 1
+        #     else:
+        #         cmdListCpy.append(RFDirectionCommands.LEFT)
+        #         mDist = manhattanDistance(curr.x, curr.y, curr.directions[newDir].x, curr.directions[newDir].y)
+
+        #         while mDist > 1:
+        #             cmdListCpy.append(RFDirectionCommands.FORWARD)
+        #             mDist -= 1
+            
+        #     queue.append((curr.directions[newDir], cmdListCpy, newDir))
+
+        print(queue)
+
+    return None
+
 def closestUnexploredNode(node, commandList, dir):
 
     queue = [(node, commandList, dir)]
@@ -463,7 +549,12 @@ def saveCoords(robot_id):
 
     if mazeFullyExplored():
         print("fully explored")
-        return {"response": [RFDirectionCommands.STOP]}
+        ret = findExit(serverVars.currentNode[robot_id], [], serverVars.currentDirection[robot_id])
+
+        if ret is not None:
+            currNode, cmdList, currDir = ret
+            cmdList.append(RFDirectionCommands.STOP)
+        return {"response": cmdList}
 
     if direction == NORTH:
         if type == ImageIntersectionTypes.CROSS:
@@ -567,6 +658,12 @@ def saveCoords(robot_id):
 
     # create new node
     newNode = createNode(nodex, nodey, nodeType)
+
+    if type == ImageIntersectionTypes.MAZE_END:
+        serverVars.mazeExit = (nodex, nodey)
+        print("FOUND MAZE END POINTS")
+        print(nodex)
+        print(nodey)
 
     # attach to the last node
     if direction == NORTH:
