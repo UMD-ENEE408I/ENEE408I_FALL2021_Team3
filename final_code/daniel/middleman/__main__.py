@@ -7,7 +7,7 @@ import time
 if __name__ == '__main__':
     vid = cam.initialize()
 
-    rfJetson = RFJetson("/dev/cu.usbserial-1440")
+    rfJetson = RFJetson("COM16")
 
     time.sleep(1)
 
