@@ -547,14 +547,7 @@ def saveCoords(robot_id):
 
     nodeType = None
 
-    if mazeFullyExplored():
-        print("fully explored")
-        ret = findExit(serverVars.currentNode[robot_id], [], serverVars.currentDirection[robot_id])
-
-        if ret is not None:
-            currNode, cmdList, currDir = ret
-            cmdList.append(RFDirectionCommands.STOP)
-        return {"response": cmdList}
+    
 
     if direction == NORTH:
         if type == ImageIntersectionTypes.CROSS:
@@ -656,6 +649,16 @@ def saveCoords(robot_id):
         
         return {"response": [RFDirectionCommands.FORWARD]}
 
+    if mazeFullyExplored():
+        print("fully explored")
+        ret = findExit(serverVars.currentNode[robot_id], [], serverVars.currentDirection[robot_id])
+
+        if ret is not None:
+            currNode, cmdList, currDir = ret
+            cmdList.append(RFDirectionCommands.FORWARD)
+            cmdList.append(RFDirectionCommands.STOP)
+        return {"response": cmdList}
+    
     # create new node
     newNode = createNode(nodex, nodey, nodeType)
 
