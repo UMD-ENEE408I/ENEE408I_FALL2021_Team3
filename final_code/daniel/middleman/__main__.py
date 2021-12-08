@@ -75,7 +75,7 @@ if __name__ == '__main__':
                         time.sleep(5)
                         print("sending again")
                         mouseResp = rfJetson.send(2, 15)
-                    time.sleep(1)
+                    time.sleep(.75)
                     mouseResp = rfJetson.send(2,15)
                 else:
                     if cmd == 2 or cmd == 3: #left or right
@@ -107,6 +107,6 @@ if __name__ == '__main__':
                         print("sending again")
                         mouseResp = rfJetson.send(cmd, dist)
                         time.sleep(1)
-                time.sleep(1)
+                time.sleep(.75)
         
         # time.sleep(.5)
